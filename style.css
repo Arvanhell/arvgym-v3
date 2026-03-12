@@ -1,0 +1,160 @@
+/* =========================================
+   ARVGYM 3.0 - CORE STYLES
+   ========================================= */
+
+/* 1. ZMIENNE (TUTAJ ZMIENIASZ KOLOR CAŁEJ APKI) */
+:root {
+    --primary-color: #00f2ff;
+    --bg-dark: #0a0a0a;
+    --card-bg: #161616;
+    --text-main: #ffffff;
+    --accent-gold: #ffcc00;
+}
+
+/* 2. LAYOUT (PODSTAWY) */
+body { background: var(--bg-dark); color: var(--text-main); font-family: 'Inter', sans-serif; }
+
+/* 3. KOMPONENTY (KARTY, PRZYCISKI) */
+.card { background: var(--card-bg); border-radius: 12px; padding: 15px; }
+
+/* 4. NOWOŚĆ 3.0: BIOMETRIA I WYZWANIA (DODAJ TU STYLE DLA NOWEJ SEKCJI) */
+#biometry-section { border-left: 4px solid var(--primary-color); }
+.achievement-badge { background: linear-gradient(45deg, #111, #222); border: 1px solid var(--accent-gold); }
+
+
+/* --- GŁÓWNY FUNDAMENT --- */
+body {
+    background-color: #121212;
+    color: #ffffff;
+    font-family: 'Orbitron', sans-serif;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+}
+
+.main-container {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* --- PASEK BOCZNY (NEON) --- */
+.side-bar {
+    width: 45px;
+    background: #1a1a1a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-right: 2px solid #00f2ff;
+    position: fixed;
+    height: 100vh;
+    z-index: 100;
+    box-shadow: 5px 0 15px rgba(0, 242, 255, 0.15);
+}
+
+.side-bar h1 {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-size: 1.1rem;
+    letter-spacing: 4px;
+    color: #00f2ff;
+    margin: 0;
+    white-space: nowrap;
+}
+
+/* --- GŁÓWNA TREŚĆ (ODKLEJENIE) --- */
+.main-content {
+    flex: 1;
+    margin-left: 45px; /* Szerokość paska */
+    padding-left: 25px !important; /* MOCNE odklejenie od neonu */
+    padding-right: 15px;
+    padding-top: 20px;
+    padding-bottom: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* --- KARTY (PUDEŁKA) --- */
+.card {
+    background: #1e1e1e;
+    border-radius: 12px;
+    padding: 20px !important; /* Tekst w środku nie dotknie krawędzi */
+    border: 1px solid #333;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+}
+
+/* --- INPUTY I ELEMENTY --- */
+.input-group {
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+input, select {
+    background: #2a2a2a;
+    border: 1px solid #444;
+    color: white;
+    padding: 12px;
+    border-radius: 8px;
+    font-family: 'Orbitron', sans-serif;
+}
+
+.save-btn {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, #00f2ff, #0072ff);
+    border: none;
+    color: white;
+    font-weight: bold;
+    border-radius: 8px;
+    text-transform: uppercase;
+    margin-top: 10px;
+}
+
+/* --- HISTORIA (LOGI) --- */
+#workout-list div {
+    padding: 10px;
+    margin-bottom: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border-left: 3px solid #00f2ff;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+#workout-log-container {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.input-group-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.small-btn {
+    background: transparent;
+    border: 1px solid #00f2ff;
+    color: #00f2ff;
+    padding: 10px 15px;
+    border-radius: 8px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(0, 242, 255, 0.2);
+}
+
+.small-btn:active {
+    background: #00f2ff;
+    color:#000;
+}
+
+#user-input-panel {
+    transition: all 0.3s ease;
+    animation: fadeIn 0.4s;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ARV GYM v.2.0</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+<div class="main-container">
+    <div class="side-bar">
+        <h1>ARV GYM</h1>
+    </div>
+
+    <div class="main-content">
+  <div class="card">
+    <div class="language-switch">
+      <button onclick="changeLang('en')">EN</button>
+      <button onclick="changeLang('pl')">PL</button>
+    </div>
+      <label id="lbl-user-select">User</label>
+  <div class="input-group-row">
+    <select id="user-selector">
+      <option value="">User</option>
+    </select>
+    <button class="small-btn" onclick="addNewUser()">+</button>
+  </div>
+
+    <div class="input-group">
+      <label>Training Focus:</label>
+      <select id="training-goal">
+        <option value="90">Hypertrophy (90s rest)</option>
+        <option value="180">Power (180s rest)</option>
+        <option value="60">Cut/Shred (60s rest)</option>
+      </select>
+    </div>
+
+    <div id="timer-display" style="display:none; text-align:center; padding:15px; background:rgba(255, 204, 0, 0.1); border-radius:10px; margin:10px 0;">
+      <span style="color:#aaa; font-size:0.8em;">RESTING...</span><br>
+      <span id="time-left" style="font-size:2.5em; color:#ffcc00; font-weight:bold;">90</span><span style="color:#ffcc00">s</span>
+    </div>
+    
+    <div id="biometry-section" class="card" style="margin-top: 20px; border: 1px solid #00f2ff;">
+    <h4 id="lbl-biometry-title" style="color: #00f2ff; text-align: center;">--- BIOMETRY ---</h4>
+    <div style="display: flex; justify-content: space-around; align-items: center;">
+        <div>
+            <span id="lbl-bmi-text">BMI:</span> 
+            <span id="bmi-value" style="font-weight: bold; color: #ffcc00;">--</span>
+        </div>
+        <div>
+            <span id="lbl-weight-text">Body Weight:</span> 
+            <span id="current-body-weight" style="font-weight: bold; color: #00ff88;">--</span>
+        </div>
+    </div>
+</div>
+
+    
+    <div class="input-group">
+      <label>Choose Exercise:</label>
+      <select id="exercise-type" onchange="showLastResult(this.value)">
+        <option value="">-- Choose Exercise --</option>
+        
+       <optgroup label="CHEST" id="group-chest">
+          <option value="Chest-Bench-Press">Flat Bench Press (Barbell)</option>
+          <option value="Chest-DB-Press">Dumbbell Press</option>
+          <option value="Chest-Incline-Press">Incline Press</option>
+          <option value="Chest-Flyes">Dumbbell Flyes</option>
+          <option value="Chest-Pushups-Standard">Pushups (Standard)</option>
+          <option value="Chest-Pushups-Wide">Pushups (Wide)</option>
+          <option value="Chest-Pushups-Diamond">Pushups (Diamond)</option>
+          <option value="Chest-Pushups-OneArm">Pushups (One Arm)</option>
+          <option value="Chest-Dips">Dips (Chest Focus)</option>
+        </optgroup>
+
+        <optgroup label="BACK" id="group-back">
+          <option value="Back-Deadlift">Deadlift</option>
+          <option value="Back-Pull-Ups">Pull-Ups (BW)</option>
+          <option value="Back-Lat-Pulldown">Lat Pulldown</option>
+          <option value="Back-Row-Barbell">Barbell Row</option>
+          <option value="Back-Row-Dumbbell">Dumbbell Row</option>
+          <option value="Back-Hyperextensions">Hyperextensions</option>
+        </optgroup>
+
+        <optgroup label="SHOULDERS" id="group-shoulders">
+          <option value="Shoulders-Military">Military Press</option>
+          <option value="Shoulders-DB-Press">Dumbbell Shoulder Press</option>
+          <option value="Shoulders-Lateral-Raises">Lateral Raises</option>
+          <option value="Shoulders-Front-Raises">Front Raises</option>
+          <option value="Shoulders-Face-Pulls">Face Pulls</option>
+          <option value="Shoulders-Rear-Delt-Flyes">Rear Delt Flyes</option>
+        </optgroup>
+
+        <optgroup label="ARMS" id="group-arms">
+          <option value="Arms-Preacher-Curl">Preacher Curl (Machine)</option>
+          <option value="Arms-BB-Curl">Barbell Curl (Biceps)</option>
+          <option value="Arms-DB-Hammer">Hammer Curls</option>
+          <option value="Arms-Pushdowns">Triceps Pushdowns (Cable)</option>
+          <option value="Arms-Skull-Crushers">Skull Crushers</option>
+          <option value="Arms-Dips-Triceps">Dips (Triceps Focus)</option>
+        </optgroup>
+
+        <optgroup label="LEGS" id="group-legs">
+          <option value="Legs-Squats">Back Squats</option>
+          <option value="Legs-Leg-Press">Leg Press</option>
+          <option value="Legs-Leg-Extension">Leg Extension (Quad Focus)</option>
+          <option value="Legs-Leg-Curl">Leg Curl (Hamstring Focus)</option>
+          <option value="Legs-Lunge">Lunges</option>
+          <option value="Legs-Calf-Standing">Standing Calf Raises</option>
+          <option value="Legs-Calf-Seated">Seated Calf Raises</option>
+        </optgroup>
+
+        <optgroup label="ABS" id="group-abs">
+          <option value="ABS-Crunches">Crunches</option>
+          <option value="ABS-Leg-Raises">Leg Raises</option>
+          <option value="ABS-Plank">Plank</option>
+          <option value="ABS-Russian-Twist">Russian Twist</option>
+        </optgroup>
+      </select>
+    </div>
+
+    <div id="last-result-info" style="padding: 10px; background: rgba(0,242,255,0.05); border-radius: 5px; margin-top: 10px;">
+      Select exercise to see stats...
+    </div>
+
+    <div class="input-group">
+      <input type="number" id="weight-in" placeholder="Weight (kg)">
+      <input type="number" id="reps-in" placeholder="Reps">
+    </div>
+
+    <div class="input-group">
+      <select id="rpe-select">
+        <option value="10">RPE 10 - Max</option>
+        <option value="9">RPE 9</option>
+        <option value="8">RPE 8</option>
+        <option value="7">RPE 7</option>
+        <option value="6">RPE 6</option>
+        <option value="5">RPE 5</option>
+        <option value="4">RPE 4</option>
+        <option value="3">RPE 3</option>
+        <option value="2">RPE 2</option>
+        <option value="1">RPE 1</option>
+        <option value="12">RPE 12 (Hot)</option>
+        <option value="15">RPE 15 (Burnout)</option>
+      </select>
+    </div>
+
+    <button onclick="saveWorkoutToLog()" class="save-btn">SAVE SESSION</button>
+  </div>
+
+    <div id="workout-log-container" class="card">
+        <div id="workout-list"></div>
+    </div>
+      <button id="viewHistoryBtn" onclick="showHistory()" class="secondary-btn" style="width:100%; margin-top:10px; background:#444;">VIEW FULL HISTORY</button>
+
+    <div id="history-modal" class="modal" style="display:none; position:fixed; z-index:999; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.9); overflow-y:auto;">
+    <div class="modal-content" style="background:#1a1a1a; margin:5% auto; padding:20px; border:1px solid #00f2ff; width:90%; border-radius:15px;">
+     <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h2 style="color:#00f2ff; margin:0;">STRENGTH ARCHIVE</h2>
+     <button onclick="closeHistoryModal()" style="background:red; color:white; border:none; padding:10px; border-radius:5px; cursor:pointer;">CLOSE [X]</button>
+        </div>
+    
+     <div style="margin: 20px 0;">
+        <label>Filter Month:</label>
+        <select id="month-filter" onchange="renderFullHistory()" style="background:#333; color:white; padding:5px;">
+            <option value="all">All Time</option>
+            <option value="03.2026">March 2026</option>
+            <option value="02.2026">February 2026</option>
+        </select>
+    </div>
+
+    <div id="full-history-table"></div>
+  </div>
+</div>
+
+  </div> </div> <script src="script.js"></script>
+</body>
+</html>
