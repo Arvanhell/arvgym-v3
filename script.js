@@ -391,7 +391,7 @@ function changeLang(lang) {
 window.loadUsers = function() {
     const select = $("user-selector");
     if (!select) return;
-    let users = JSON.parse(localStorage.getItem('gym_users')) || ['ARV'];
+    let users = JSON.parse(localStorage.getItem('gym_users')) || ['CezArv'];
     select.innerHTML = "";
     users.forEach(name => {
         const opt = document.createElement('option');
@@ -444,7 +444,7 @@ window.deleteCurrentProfile = function() {
     const select = $("user-selector");
     const userToDelete = select.value;
 
-    let users = JSON.parse(localStorage.getItem("gym_users")) || ['ARV'];
+    let users = JSON.parse(localStorage.getItem("gym_users")) || ['CezArv'];
         if (users.length <=1) {
             alert(currentLang === 'pl' ? "Nie mozesz usunac ostatniego profilu!" : "Cannot delete the last remaining profile!");
             return;
