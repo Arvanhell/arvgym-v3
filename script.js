@@ -13,23 +13,32 @@ let userProfile = JSON.parse(localStorage.getItem('arvGymProfile')) || {
 };
 
 // --- 3. BIOMETRIA ---
-function updateBiometry() {
-    const heightM = userProfile.height / 100;
-    const bmiVal = (userProfile.currentWeight / (heightM * heightM)).toFixed(1);
-    const d = langData[currentLang].stats;
+// Ta funkcja jest wywoływana przez onclick="promptWeightUpdate()" w Twoim HTML
+function promptWeightUpdate() {
+    // 1. Wyświetla okienko z aktualną wagą jako domyślną
+    const newWeight = prompt("Wprowadź nową wagę (kg):", userProfile.currentWeight);
     
-    if ($("lbl-biometry-title")) $("lbl-biometry-title").innerText = d.title;
-    if ($("lbl-bmi-text")) $("lbl-bmi-text").innerText = d.bmi;
-    if ($("lbl-weight-text")) $("lbl-weight-text").innerText = d.weight;
-    
-    if ($("bmi-value")) {
-        $("bmi-value").innerText = bmiVal;
-        $("bmi-value").style.color = (bmiVal < 18.5 || bmiVal > 25) ? "#ff4444" : "#00ff88";
-    }
-    if ($("current-body-weight")) {
-        $("current-body-weight").innerText = userProfile.currentWeight + " kg";
+    // 2. Jeśli użytkownik nie kliknął "Anuluj"
+    if (newWeight !== null) {
+        const weight = parseFloat(newWeight);
+        
+        // 3. Walidacja: czy to liczba i czy jest większa od 0
+        if (!isNaN(weight) && weight > 0) {
+            userProfile.currentWeight = weight; 
+            
+            // 4. Zapis do pamięci pod Twoim kluczem
+            localStorage.setItem('arvGymProfile', JSON.stringify(userProfile)); 
+            
+            // 5. Odświeżenie widoku (Twoja funkcja powyżej)
+            updateBiometry(); 
+            
+            console.log("Biometria zaktualizowana: " + weight + " kg");
+        } else {
+            alert("Błędna wartość, Pilocie. Podaj liczbę.");
+        }
     }
 }
+
 
 // 1. Pomocnik i Dane
 const $ = (id) => document.getElementById(id);
@@ -454,4 +463,30 @@ window.onload = () => {
     } // Ustawia język i przy okazji odpala updateBiometry()
 };
 
+// Export to File
+// Ta funkcja jest wywoływana przez onclick="promptWeightUpdate()" w Twoim HTML
+function promptWeightUpdate() {
+    // 1. Wyświetla okienko z aktualną wagą jako domyślną
+    const newWeight = prompt("Wprowadź nową wagę (kg):", userProfile.currentWeight);
+    
+    // 2. Jeśli użytkownik nie kliknął "Anuluj"
+    if (newWeight !== null) {
+        const weight = parseFloat(newWeight);
+        
+        // 3. Walidacja: czy to liczba i czy jest większa od 0
+        if (!isNaN(weight) && weight > 0) {
+            userProfile.currentWeight = weight; 
+            
+            // 4. Zapis do pamięci pod Twoim kluczem
+            localStorage.setItem('arvGymProfile', JSON.stringify(userProfile)); 
+            
+            // 5. Odświeżenie widoku (Twoja funkcja powyżej)
+            updateBiometry(); 
+            
+            console.log("Biometria zaktualizowana: " + weight + " kg");
+        } else {
+            alert("Błędna wartość, Pilocie. Podaj liczbę.");
+        }
+    }
+}
 

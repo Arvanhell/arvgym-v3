@@ -43,19 +43,34 @@
       <span id="time-left" style="font-size:2.5em; color:#ffcc00; font-weight:bold;">90</span><span style="color:#ffcc00">s</span>
     </div>
     
-    <div id="biometry-section" class="card" style="margin-top: 20px; border: 1px solid #00f2ff;">
-    <h4 id="lbl-biometry-title" style="color: #00f2ff; text-align: center;">--- BIOMETRY ---</h4>
-    <div style="display: flex; justify-content: space-around; align-items: center;">
-        <div>
-            <span id="lbl-bmi-text">BMI:</span> 
-            <span id="bmi-value" style="font-weight: bold; color: #ffcc00;">--</span>
-        </div>
-        <div>
-            <span id="lbl-weight-text">Body Weight:</span> 
-            <span id="current-body-weight" style="font-weight: bold; color: #00ff88;">--</span>
-        </div>
+    <div id="biometry-section" class="card" style="margin-top: 20px; border: 1px solid #00f2ff; border-radius: 20px; padding: 15px; background: rgba(0, 5, 15, 0.8);">
+      <h4 id="lbl-biometry-title" style="color: #00f2ff; text-align: center; letter-spacing: 2px;">--- BIOMETRY ---</h4>
+      
+      <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; align-items: center;">
+          
+          <div class="sector-btn" style="cursor: default; min-width: 100px; text-align: center; border-color: #ffcc00;">
+              <span id="lbl-bmi-text">BMI:</span> 
+              <span id="bmi-value" style="font-weight: bold; margin-left: 5px;">--</span>
+          </div>
+  
+          <div class="sector-btn active-sector-btn" style="min-width: 140px; text-align: center; border-color: #00ff88;" onclick="promptWeightUpdate()">
+              <span id="lbl-weight-text">Body Weight:</span> 
+              <span id="current-body-weight" style="font-weight: bold; margin-left: 5px;">--</span>
+          </div>
+  
+      </div>
+      <div style="display: flex; justify-content: center; gap: 10px; margin-top: 15px;">
+        <button onclick="exportFullData()" class="sector-btn" style="font-size: 0.8em; padding: 5px 15px;">💾 save</button>
+        
+        <label class="sector-btn" style="font-size: 0.8em; padding: 5px 15px; cursor: pointer;">
+            📥 load
+            <input type="file" id="import-input" style="display: none;" onchange="importFullData(event)">
+        </label>
     </div>
-</div>
+    
+   
+  </div>
+  
 
     
     <div class="input-group">
@@ -175,6 +190,11 @@
   </div>
 </div>
 
-  </div> </div> <script src="script.js"></script>
+    
+  </div>
+ </div>
+ <audio id="timer-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
+
+<script src="script.js"></script>
 </body>
 </html>
