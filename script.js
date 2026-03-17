@@ -391,7 +391,7 @@ function changeLang(lang) {
 window.loadUsers = function() {
     const select = $("user-selector");
     if (!select) return;
-    let users = JSON.parse(localStorage.getItem('gym_users')) || ['Cezar'];
+    let users = JSON.parse(localStorage.getItem('gym_users')) || ['ARV'];
     select.innerHTML = "";
     users.forEach(name => {
         const opt = document.createElement('option');
@@ -406,6 +406,28 @@ window.onload = () => {
     applyInputFeedback();
 };
 
+window.promptAddUser = function() {
+    const newName = prompt(currentLang === 'pl' ? "Podaj imię nowego użytkownika:" : "Enter new user name:");
+    
+    if (newName && newName.trim() !== "") {
+        let users = JSON.parse(localStorage.getItem('gym_users')) || ['ARV'];
+        
+        if (users.includes(newName.trim())) {
+            alert(currentLang === 'pl' ? "Ten profil już istnieje!" : "This profile already exists!");
+            return;
+        }
+        
+        users.push(newName.trim());
+        localStorage.setItem('gym_users', JSON.stringify(users));
+        
+        window.loadUsers(); // Odświeża listę w selektorze
+        $("user-selector").value = newName.trim(); // Przełącza na nowego usera
+        alert(currentLang === 'pl' ? "Dodano użytkownika: " + newName : "User added: " + newName);
+    }
+};
+
+
+
 // --- 7. BACKUP SYSTEM ---
 function exportFullData() {
     const backup = { profile: userProfile, history: workoutHistory };
@@ -417,3 +439,25 @@ function exportFullData() {
 }
 
 window.exportProfile = exportFullData;
+
+window.deleteCurrentProfile = function() {
+    const select = $("user-selector");
+    const userToDelete = select.value;
+
+    let users = JSON.parse(localStorage.getItem("gym_users")) || ['ARV'];
+        if (users.length <=1) {
+            alert(currentLang === 'pl' ? "Nie mozesz usunac ostatniego profilu!" : "Cannot delete the last remaining profile!");
+            return;
+        }
+        const confirmMsg = currentLang === 'pl' ? `Czy na pewno usunac profil? : ${userToDelete} ?` : `Delete profile: ${userToDelete}?`;
+            if (confirm(confirmMsg)) {
+                // Scalpel precision for only one 
+                users = users.filter(u => u !== userToDelete);
+                localStorage.setItem('gym_users', JSON.stringify(users));
+                // cleansing all data from history only this user
+                workoutHistory = workoutHistory.filter(h => h.user !== userToDelete);
+                localStorage.setItem('workoutLogs', JSON.stringify(workoutHistory));
+                    alert(currentLang === 'pl' ? "Profil i jego dane usuniete" : "Profile and data deleted.");
+                    location.reload();
+            }
+};

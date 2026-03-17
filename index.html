@@ -26,7 +26,12 @@
     <select id="user-selector">
       <option value="">User</option>
     </select>
-    <button class="small-btn" onclick="addNewUser()">+</button>
+    <button onclick="window.deleteCurrentProfile()" class="delete-btn" style="background:none; border:1px solid #ff4444; color:#ff4444; cursor:pointer; margin-left:10px; border-radius:5px;">
+      🗑️
+    </button>
+    
+    <button class="small-btn" onclick="window.promptAddUser()">+</button>
+
   </div>
 
     <div class="input-group">
