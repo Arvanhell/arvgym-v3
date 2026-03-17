@@ -211,8 +211,7 @@ function renderLog() {
         </li>`;
     });
     listContainer.innerHTML = html + "</ul>";
-    }
-
+}
 
 // --- 3.1 INPUT VISUAL FEEDBACK ---
 function applyInputFeedback() {

@@ -21,6 +21,13 @@ The application calculates intensity based on training goals:
 - **Power:** 180s recovery focus.
 - **Shred:** 60s recovery focus.
 
+## 🛰️ Phase 4.0: Quantum Progress (Upcoming)
+* **Visual Velocity:** Implementation of `Chart.js` for real-time strength progression mapping.
+* **Adaptive Intelligence:** Radar-driven weight suggestions based on previous RPE trends.
+* **State Persistence:** Automatic language and profile session recovery.
+* **Data Fortress:** Encrypted JSON backup/restore module for cross-device migration.
+
+
 ## 🛡 Disclaimer
 *"I am not a dust in the machine, but the spark that drives it."* This tool is built to last. Data is stored locally on your device for maximum privacy and instant access.
 
