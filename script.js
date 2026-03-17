@@ -9,7 +9,7 @@ let currentLang = 'en';
 // --- 2. BIOMETRICS ENGINE (WEIGHT, HEIGHT & BODY TYPE) ---
 
 /**
- * Calculates BMI and returns a descriptive status with color coding
+ * Calculates BMI and returns a descriptive status with intelligent Athlete Override
  */
 function getBMIDetails(weight, height) {
     if (!height || height === 0) return { value: 0, status: "N/A", color: "#aaa" };
@@ -19,16 +19,32 @@ function getBMIDetails(weight, height) {
     let status = "Normal";
     let color = "#00ff88"; // Green
 
+    // THE ATHLETIC OVERRIDE: Check if CezArv is in beast mode
+    const isAthletic = ["Athletic", "Muscular", "Atletyczny", "Muskularny"].includes(userProfile.bodyType);
+
     if (bmi < 18.5) { status = "Underweight"; color = "#00f2ff"; }
-    else if (bmi >= 25 && bmi < 30) { status = "Overweight"; color = "#ffcc00"; }
-    else if (bmi >= 30) { status = "Obese"; color = "#ff4444"; }
+    else if (bmi >= 25 && bmi < 30) {
+        // If Athletic, 25-30 is "Fit", not "Overweight"
+        status = isAthletic ? "Fit/Form" : "Overweight";
+        color = isAthletic ? "#00ff88" : "#ffcc00";
+    }
+    else if (bmi >= 30) {
+        // If Athletic, 30+ is "Heavy Muscle", not "Obese"
+        status = isAthletic ? "Athletic/Heavy" : "Obese";
+        color = isAthletic ? "#00ff88" : "#ff4444";
+    }
 
     if (currentLang === 'pl') {
-        const trans = { "Underweight": "Niedowaga", "Normal": "Norma", "Overweight": "Nadwaga", "Obese": "Otyłość" };
+        const trans = { 
+            "Underweight": "Niedowaga", "Normal": "Norma", 
+            "Overweight": "Nadwaga", "Obese": "Otyłość",
+            "Fit/Form": "Forma/Fit", "Athletic/Heavy": "Atletyczna/Masa"
+        };
         status = trans[status] || status;
     }
     return { value: bmi, status: status, color: color };
 }
+
 
 // Global user profile state - initialized with default values or from storage
 let userProfile = JSON.parse(localStorage.getItem('arvGymProfile')) || {
@@ -108,6 +124,23 @@ function promptBiometryUpdate() {
         alert(isPl ? "Błędne dane! Wprowadź poprawne liczby." : "Invalid input! Please enter valid numbers.");
     }
 }
+
+// --- 2.1 SETTINGS ENGINE (INTEGRATION) ---
+
+// Updates body type directly from the upcoming Settings Panel
+// --- 2.1 BIOMETRY LIVE UPDATE ---
+
+window.updateBodyType = function() {
+    const selector = $("body-type-selector");
+    if (!selector) return;
+    // Update the profile with the new selection
+    userProfile.bodyType = selector.value;
+    // Save to the key you used: 'arvGymProfile'
+    localStorage.setItem('arvGymProfile', JSON.stringify(userProfile));   
+    // Immediate recalibration of BMI status (Fit/Form vs Obese)
+    updateBiometry();    
+    console.log(`System: Architecture calibrated to ${userProfile.bodyType}`);
+};
 
 // Backward compatibility with HTML onclick
 window.promptWeightUpdate = promptBiometryUpdate;
@@ -427,37 +460,59 @@ window.promptAddUser = function() {
 };
 
 
+// --- 7. BACKUP & PROFILE MANAGEMENT ---
 
-// --- 7. BACKUP SYSTEM ---
-function exportFullData() {
-    const backup = { profile: userProfile, history: workoutHistory };
+// Professional Export: Full system backup (Profile + History + Users)
+window.exportData = function() {
+    const backup = { 
+        profile: userProfile, 
+        history: workoutHistory,
+        users: JSON.parse(localStorage.getItem('gym_users')) || ['CezArv']
+    };
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backup));
     const dl = document.createElement('a');
     dl.setAttribute("href", dataStr);
-    dl.setAttribute("download", `ARV_BACKUP.json`);
+    
+    // Dynamic filename based on current date
+    const date = new Date().toISOString().slice(0, 10);
+    dl.setAttribute("download", `CezArv_Backup_${date}.json`);
+    
+    document.body.appendChild(dl); // Best practice for cross-browser compatibility
     dl.click();
-}
+    dl.remove();
+};
 
-window.exportProfile = exportFullData;
+// Compatibility Alias (Points to the new export function)
+window.exportProfile = window.exportData;
 
+// The "Scalpel": Secure profile & data deletion
 window.deleteCurrentProfile = function() {
     const select = $("user-selector");
     const userToDelete = select.value;
 
     let users = JSON.parse(localStorage.getItem("gym_users")) || ['CezArv'];
-        if (users.length <=1) {
-            alert(currentLang === 'pl' ? "Nie mozesz usunac ostatniego profilu!" : "Cannot delete the last remaining profile!");
-            return;
-        }
-        const confirmMsg = currentLang === 'pl' ? `Czy na pewno usunac profil? : ${userToDelete} ?` : `Delete profile: ${userToDelete}?`;
-            if (confirm(confirmMsg)) {
-                // Scalpel precision for only one 
-                users = users.filter(u => u !== userToDelete);
-                localStorage.setItem('gym_users', JSON.stringify(users));
-                // cleansing all data from history only this user
-                workoutHistory = workoutHistory.filter(h => h.user !== userToDelete);
-                localStorage.setItem('workoutLogs', JSON.stringify(workoutHistory));
-                    alert(currentLang === 'pl' ? "Profil i jego dane usuniete" : "Profile and data deleted.");
-                    location.reload();
-            }
+    
+    // Survival Rule: At least one user must remain
+    if (users.length <= 1) {
+        alert(currentLang === 'pl' ? "Nie możesz usunąć ostatniego profilu!" : "Cannot delete the last remaining profile!");
+        return;
+    }
+    
+    const confirmMsg = currentLang === 'pl' ? `Czy na pewno usunąć profil: ${userToDelete}?` : `Delete profile: ${userToDelete}?`;
+    
+    if (confirm(confirmMsg)) {
+        // Remove from user list
+        users = users.filter(u => u !== userToDelete);
+        localStorage.setItem('gym_users', JSON.stringify(users));
+        
+        // Purge only the logs belonging to this user
+        workoutHistory = workoutHistory.filter(h => h.user !== userToDelete);
+        localStorage.setItem('workoutLogs', JSON.stringify(workoutHistory));
+        
+        alert(currentLang === 'pl' ? "Profil i jego dane usunięte." : "Profile and data deleted.");
+        location.reload(); // Refresh to rebuild the world
+    }
 };
+
+
+
