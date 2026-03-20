@@ -140,13 +140,30 @@ const saveWorkoutToLog = () => {
     const ex = $("exercise-type").value;
     const w = $("weight-in").value;
     const r = $("reps-in").value;
+    const rpe = $("rpe-select").value;
+
     if (!activeUser || !ex || !w || !r) return alert("Fill all fields!");
 
     const logs = JSON.parse(localStorage.getItem(STORAGE_KEYS.LOGS + activeUser)) || [];
-    logs.unshift({ exercise: ex, weight: w, reps: r, rpe: $("rpe-select").value, date: new Date().toLocaleDateString() });
+    //--- Number of series in an exercise (New)
+    const tpday = new 
+        Date().toLocaleDateString();
+        // how many same exercise from today
+        const setNumber = logs.filter(l => 
+            l.exercise === ex && l.date === today).length + 1;
+        // save to log     
+    logs.unshift({ 
+        exercise: ex, 
+        weight: w, 
+        reps: r, 
+        rpe: rpe, 
+        date: today,
+        set: setNumber // add set to database
+    });
     localStorage.setItem(STORAGE_KEYS.LOGS + activeUser, JSON.stringify(logs));
-
-    $("weight-in").value = ''; $("reps-in").value = '';
+    // Re 
+    $("weight-in").value = ''; 
+    $("reps-in").value = '';
     renderLog(logs);
     showLastResult(ex);
     startRestTimer();
@@ -155,19 +172,24 @@ const saveWorkoutToLog = () => {
 function renderLog(history = []) {
     const list = $("workout-list");
     if (!list) return;
-    // take history if none
+    
     if (history.length === 0) {
         const activeUser = $("user-selector").value;
-            history = JSON.parse(localStorage.getItem(STORAGE_KEYS.LOGS + activeUser)) || [];
+        history = JSON.parse(localStorage.getItem(STORAGE_KEYS.LOGS + activeUser)) || [];
     }
+    
     let html = `<h3 style="color:#00f2ff">${currentLang === 'pl' ? 'Aktywność' : 'Activity'}</h3><ul>`;
     history.slice(0, 5).forEach(i => {
-        // tlumaczenie w logach na zywo
         const translatedName = langData[currentLang].exNames[i.exercise] || i.exercise;
-        html += `<li style="margin-bottom:5px;"><b>${translatedName}</b>: ${i.exercise}</b>: ${i.weight}kg x ${i.reps} <small>(RPE ${i.rpe})</small></li>`;
+        // Dodajemy wyświetlanie serii (Set X)
+        const setLabel = currentLang === 'pl' ? 'Seria' : 'Set';
+        const setDisplay = i.set ? `<span style="color:#ff00ff"> [${setLabel} ${i.set}]</span>` : '';
+        
+        html += `<li style="margin-bottom:5px;"><b>${translatedName}</b>${setDisplay}: ${i.weight}kg x ${i.reps} <small>(RPE ${i.rpe})</small></li>`;
     });
     list.innerHTML = html + "</ul>";
 }
+
 
 // --- TIMER & UI ---
 let timerInterval;
