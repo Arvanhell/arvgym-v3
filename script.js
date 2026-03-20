@@ -146,7 +146,7 @@ const saveWorkoutToLog = () => {
 
     const logs = JSON.parse(localStorage.getItem(STORAGE_KEYS.LOGS + activeUser)) || [];
     //--- Number of series in an exercise (New)
-    const tpday = new 
+    const today = new 
         Date().toLocaleDateString();
         // how many same exercise from today
         const setNumber = logs.filter(l => 
@@ -169,7 +169,7 @@ const saveWorkoutToLog = () => {
     startRestTimer();
 };
 
-function renderLog(history = []) {
+function renderLg(history = []) {
     const list = $("workout-list");
     if (!list) return;
     
