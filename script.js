@@ -1,304 +1,324 @@
 // --- CONFIG ARVGYM 3.0 ---
 const APP_VERSION = "3.0.0";
 
-// --- 1. HELPERS & DATA INITIALIZATION ---
+const STORAGE_KEYS = {
+    USERS: 'gym_users',
+    PROFILES: 'gym_profile_',
+    LOGS: 'gym_logs_'
+};
+
 const $ = (id) => document.getElementById(id);
-let workoutHistory = JSON.parse(localStorage.getItem('workoutLogs')) || [];
 let currentLang = 'en';
 
-// --- 2. BIOMETRICS ENGINE (WEIGHT, HEIGHT & BODY TYPE) ---
+// --- INITIALIZATION ---
+const initializeArvGym = () => {
+    console.log(`System // ArvGym v${APP_VERSION} Booting...`);
 
-/**
- * Calculates BMI and returns a descriptive status with intelligent Athlete Override
- */
-function getBMIDetails(weight, height) {
-    if (!height || height === 0) return { value: 0, status: "N/A", color: "#aaa" };
-    const heightInMeters = height / 100;
-    const bmi = (weight / (heightInMeters * heightInMeters)).toFixed(1);
+    // 1. Athlete Management
+    if ($("btn-user-add")) $("btn-user-add").onclick = handleAddUser;
+    if ($("btn-user-purge")) $("btn-user-purge").onclick = deleteActiveProfile;
+    if ($("user-selector")) $("user-selector").onchange = handleUserSwitch;
+
+    // 2. Language & UI Actions
+    if ($("btn-lang-en")) $("btn-lang-en").onclick = () => changeLang('en');
+    if ($("btn-lang-pl")) $("btn-lang-pl").onclick = () => changeLang('pl');
+    if ($("btn-save-workout")) $("btn-save-workout").onclick = saveWorkoutToLog;
+    if ($("btn-edit-bio")) $("btn-edit-bio").onclick = updateAthleteProfile;
+    if ($("btn-export")) $("btn-export").onclick = exportSystemBackup;
+
+    // 3. Modal Controls
+    const modal = $("history-modal");
+    if ($("viewHistoryBtn")) $("viewHistoryBtn").onclick = () => { modal.style.display = "block"; renderFullHistory(); };
+    if (modal) modal.querySelector("button").onclick = () => modal.style.display = "none";
+
+    // 4. Boot Sequence
+    injectVisualFeedback();
+    renderUserSelector();
+    handleUserSwitch();
     
-    let status = "Normal";
-    let color = "#00ff88"; // Green
+    console.log("System // Boot sequence complete.");
+};
 
-    // THE ATHLETIC OVERRIDE: Check if CezArv is in beast mode
-    const isAthletic = ["Athletic", "Muscular", "Atletyczny", "Muskularny"].includes(userProfile.bodyType);
+// --- USER ENGINE ---
+const handleUserSwitch = () => {
+    const activeUser = $("user-selector").value;
+    if (!activeUser) return;
+    const userLogs = JSON.parse(localStorage.getItem(STORAGE_KEYS.LOGS + activeUser)) || [];
+    syncBiometryUI();
+    renderLog(userLogs);
+    console.log(`System // Context: ${activeUser}`);
+};
+
+const handleAddUser = () => {
+    const msg = (currentLang === 'pl') ? "Podaj imie:" : "Enter name:";
+    const name = prompt(msg);
+    if (!name || name.trim() === "") return;
+    let users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS)) || ["CezArv"];
+    if (users.includes(name)) return alert("Athlete exists.");
+    users.push(name.trim());
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+    renderUserSelector();
+    $("user-selector").value = name.trim();
+    handleUserSwitch();
+};
+
+// --- BIOMETRICS ENGINE ---
+function getBMIDetails(weight, height, bodyType) {
+    if (!height || height === 0) return { value: 0, status: "N/A", color: "#aaa" };
+    const bmi = (weight / ((height/100) ** 2)).toFixed(1);
+    let status = "Normal", color = "#00ff88";
+    const isAthletic = ["Athletic", "Muscular", "Atletyczny", "Muskularny"].includes(bodyType);
 
     if (bmi < 18.5) { status = "Underweight"; color = "#00f2ff"; }
-    else if (bmi >= 25 && bmi < 30) {
-        // If Athletic, 25-30 is "Fit", not "Overweight"
-        status = isAthletic ? "Fit/Form" : "Overweight";
-        color = isAthletic ? "#00ff88" : "#ffcc00";
-    }
-    else if (bmi >= 30) {
-        // If Athletic, 30+ is "Heavy Muscle", not "Obese"
-        status = isAthletic ? "Athletic/Heavy" : "Obese";
-        color = isAthletic ? "#00ff88" : "#ff4444";
-    }
+    else if (bmi >= 25 && bmi < 30) { status = isAthletic ? "Fit/Form" : "Overweight"; color = isAthletic ? "#00ff88" : "#ffcc00"; }
+    else if (bmi >= 30) { status = isAthletic ? "Athletic/Heavy" : "Obese"; color = isAthletic ? "#00ff88" : "#ff4444"; }
 
     if (currentLang === 'pl') {
-        const trans = { 
-            "Underweight": "Niedowaga", "Normal": "Norma", 
-            "Overweight": "Nadwaga", "Obese": "Otyłość",
-            "Fit/Form": "Forma/Fit", "Athletic/Heavy": "Atletyczna/Masa"
-        };
+        const trans = { "Underweight": "Niedowaga", "Normal": "Norma", "Overweight": "Nadwaga", "Obese": "Otyłość", "Fit/Form": "Forma/Fit", "Athletic/Heavy": "Atletyczna/Masa" };
         status = trans[status] || status;
     }
     return { value: bmi, status: status, color: color };
 }
 
-
-// Global user profile state - initialized with default values or from storage
-let userProfile = JSON.parse(localStorage.getItem('arvGymProfile')) || {
-  height: 180,
-  currentWeight: 80,
-  bodyType: "Athletic",
-  unitSystem: 'metric' 
-};
-
-// Main UI Update for the Biometrics Section
-function updateBiometry() {
-    if (typeof langData === 'undefined' || !langData[currentLang]) return;
+function syncBiometryUI() {
+    const activeUser = $("user-selector").value;
+    if (!activeUser || typeof langData === 'undefined') return;
+    const profileKey = STORAGE_KEYS.PROFILES + activeUser;
+    const data = JSON.parse(localStorage.getItem(profileKey)) || { weight: 80, height: 180, bodyType: "Athletic" };
+    const bmiData = getBMIDetails(data.weight, data.height, data.bodyType);
     
-    const bmiData = getBMIDetails(userProfile.currentWeight, userProfile.height);
-    const d = langData[currentLang].stats;
-    
-    // Update labels for the section
-    if ($("lbl-biometry-title")) $("lbl-biometry-title").innerText = d.title;
-    if ($("lbl-bmi-text")) $("lbl-bmi-text").innerText = d.bmi;
-    if ($("lbl-weight-text")) $("lbl-weight-text").innerText = d.weight;
-    
-    // Update BMI value and descriptive status
-    const bmiValueDisplay = $("bmi-value");
-    if (bmiValueDisplay) {
-        bmiValueDisplay.innerText = bmiData.value;
-        bmiValueDisplay.style.color = bmiData.color;
-        bmiValueDisplay.innerHTML += ` <span style="font-size:0.5em; opacity:0.8; margin-left:5px;">(${bmiData.status})</span>`;
+    if ($("bmi-value")) {
+        $("bmi-value").innerText = bmiData.value;
+        $("bmi-value").style.color = bmiData.color;
+        $("bmi-value").innerHTML += ` <span style="font-size:0.5em; opacity:0.8; margin-left:5px;">(${bmiData.status})</span>`;
     }
-    
-    // Update Combined Stats: Weight, Height and chosen Body Type
     if ($("current-body-weight")) {
-        const bType = userProfile.bodyType || (currentLang === 'pl' ? "Nieokreślona" : "Not set");
-        $("current-body-weight").innerHTML = `
-            <span style="font-size:1.1em; letter-spacing:1px;">${userProfile.currentWeight}kg / ${userProfile.height}cm</span><br>
-            <span style="color:#00f2ff; font-size:0.85em; font-weight:bold; text-transform:uppercase;">[ ${bType} ]</span>
-        `;
+        const bType = data.bodyType || (currentLang === 'pl' ? "Nieokreślona" : "Not set");
+        $("current-body-weight").innerHTML = `<span style="font-size:1.1em;">${data.weight}kg / ${data.height}cm</span><br><span style="color:#00f2ff; font-size:0.85em; font-weight:bold;">[ ${bType} ]</span>`;
     }
 }
 
-// Interactive update of all biometric parameters
-function promptBiometryUpdate() {
+function updateAthleteProfile() {
     const isPl = currentLang === 'pl';
+    const activeUser = $("user-selector").value;
+    const profileKey = STORAGE_KEYS.PROFILES + activeUser;
+    const current = JSON.parse(localStorage.getItem(profileKey)) || { weight: 80, height: 180, bodyType: "Athletic" };
     
-    // 1. Weight prompt
-    const newWeight = prompt(isPl ? "Podaj wagę (kg):" : "Enter weight (kg):", userProfile.currentWeight);
-    if (newWeight === null) return; 
+    const w = parseFloat(prompt(isPl ? "Waga (kg):" : "Weight (kg):", current.weight));
+    const h = parseFloat(prompt(isPl ? "Wzrost (cm):" : "Height (cm):", current.height));
+    if (isNaN(w) || isNaN(h)) return;
 
-    // 2. Height prompt
-    const newHeight = prompt(isPl ? "Podaj wzrost (cm):" : "Enter height (cm):", userProfile.height);
-    if (newHeight === null) return; 
+    const typeChoice = prompt(isPl ? "1: Chudy, 2: Szczupły, 3: Atletyczny, 4: Muskularny, 5: Otyły" : "1: Ecto, 2: Lean, 3: Athletic, 4: Muscular, 5: Endo", "3");
+    const typeMap = isPl ? { "1": "Chudy", "2": "Szczupły", "3": "Atletyczny", "4": "Muskularny", "5": "Otyły" } : { "1": "Ectomorph", "2": "Lean", "3": "Athletic", "4": "Muscular", "5": "Endomorph" };
 
-    // 3. Body Type selection prompt
-    const types = isPl 
-        ? "1: Chudy, 2: Szczupły, 3: Atletyczny, 4: Muskularny, 5: Otyły" 
-        : "1: Ectomorph, 2: Lean, 3: Athletic, 4: Muscular, 5: Endomorph";
-    const typeChoice = prompt(`${isPl ? "Wybierz budowę ciała (1-5):" : "Choose body type (1-5):"}\n${types}`, "3");
-    
-    const typeMap = isPl 
-        ? { "1": "Chudy", "2": "Szczupły", "3": "Atletyczny", "4": "Muskularny", "5": "Otyły" }
-        : { "1": "Ectomorph", "2": "Lean", "3": "Athletic", "4": "Muscular", "5": "Endomorph" };
-
-    const w = parseFloat(newWeight);
-    const h = parseFloat(newHeight);
-
-    if (!isNaN(w) && w > 0 && !isNaN(h) && h > 0) {
-        userProfile.currentWeight = w;
-        userProfile.height = h;
-        if (typeMap[typeChoice]) userProfile.bodyType = typeMap[typeChoice];
-        
-        // Save to persistent storage
-        localStorage.setItem('arvGymProfile', JSON.stringify(userProfile)); 
-        
-        // Refresh UI
-        updateBiometry(); 
-        console.log(`System: Profile recalibrated for ${userProfile.currentWeight}kg, ${userProfile.height}cm, Type: ${userProfile.bodyType}`);
-    } else {
-        alert(isPl ? "Błędne dane! Wprowadź poprawne liczby." : "Invalid input! Please enter valid numbers.");
-    }
+    localStorage.setItem(profileKey, JSON.stringify({ weight: w, height: h, bodyType: typeMap[typeChoice] || current.bodyType }));
+    syncBiometryUI();
 }
 
-// --- 2.1 SETTINGS ENGINE (INTEGRATION) ---
+// --- TRAINING LOGIC ---
+function showLastResult(ex) {
+    const infoBox = $("last-result-info");
+    const activeUser = $("user-selector").value;
+    if (!infoBox || !activeUser || !ex) return;
 
-// Updates body type directly from the upcoming Settings Panel
-// --- 2.1 BIOMETRY LIVE UPDATE ---
+    const history = JSON.parse(localStorage.getItem(STORAGE_KEYS.LOGS + activeUser)) || [];
+    const exHistory = history.filter(e => e.exercise === ex);
+    const last = exHistory[0];
 
-window.updateBodyType = function() {
-    const selector = $("body-type-selector");
-    if (!selector) return;
-    // Update the profile with the new selection
-    userProfile.bodyType = selector.value;
-    // Save to the key you used: 'arvGymProfile'
-    localStorage.setItem('arvGymProfile', JSON.stringify(userProfile));   
-    // Immediate recalibration of BMI status (Fit/Form vs Obese)
-    updateBiometry();    
-    console.log(`System: Architecture calibrated to ${userProfile.bodyType}`);
+    let content = `<b style="color:#00f2ff">${ex}</b><br>`;
+    if (last) {
+        content += `⏱️ Last: ${last.weight}kg x ${last.reps} (RPE ${last.rpe})<br>`;
+        const rpeVal = parseInt(last.rpe);
+        let msg = rpeVal >= 12 ? "🔥 HOT! Stay here." : "🚀 Solid! Push it.";
+        content += `<span style="font-weight:bold;">${msg}</span>`;
+    }
+    infoBox.innerHTML = content;
+}
+
+const saveWorkoutToLog = () => {
+    const activeUser = $("user-selector").value;
+    const ex = $("exercise-type").value;
+    const w = $("weight-in").value;
+    const r = $("reps-in").value;
+    if (!activeUser || !ex || !w || !r) return alert("Fill all fields!");
+
+    const logs = JSON.parse(localStorage.getItem(STORAGE_KEYS.LOGS + activeUser)) || [];
+    logs.unshift({ exercise: ex, weight: w, reps: r, rpe: $("rpe-select").value, date: new Date().toLocaleDateString() });
+    localStorage.setItem(STORAGE_KEYS.LOGS + activeUser, JSON.stringify(logs));
+
+    $("weight-in").value = ''; $("reps-in").value = '';
+    renderLog(logs);
+    showLastResult(ex);
+    startRestTimer();
 };
 
-// Backward compatibility with HTML onclick
-window.promptWeightUpdate = promptBiometryUpdate;
-
-
-// --- 3. TRAINING LOGIC & RADAR ---
-
-function getTodaySets(exerciseName) {
-    const today = new Date().toLocaleDateString();
-    return workoutHistory.filter(e => e.exercise === exerciseName && e.date === today).length + 1;
-}
-
-function showLastResult(exerciseName) {
-    const infoBox = $("last-result-info");
-    if (!infoBox) return;
-    if (!exerciseName) {
-        infoBox.innerHTML = (currentLang === 'pl') ? "Wybierz cwiczenie..." : "Select exercise...";
-        return;
+function renderLog(history = []) {
+    const list = $("workout-list");
+    if (!list) return;
+    // take history if none
+    if (history.length === 0) {
+        const activeUser = $("user-selector").value;
+            history = JSON.parse(localStorage.getItem(STORAGE_KEYS.LOGS + activeUser)) || [];
     }
-    
-    const exerciseHistory = workoutHistory.filter(e => e.exercise === exerciseName);
-    const lastEntry = exerciseHistory[0]; 
-    const allWeights = exerciseHistory.map(e => parseFloat(e.weight)).filter(w => !isNaN(w));
-    const personalRecord = allWeights.length > 0 ? Math.max(...allWeights) : null;
-
-    let content = `<b style="color:#00f2ff">${exerciseName}</b><br>`;
-    
-    if (lastEntry) {
-        content += `⏱️ Last: <span style="color:#00f2ff">${lastEntry.weight}kg x ${lastEntry.reps}</span> (@RPE ${lastEntry.rpe})<br>`;
-        if (personalRecord) content += `🏆 PR: <span style="color:#ffcc00">${personalRecord}kg</span><br>`;
-        
-                // --- RADAR ANALYSIS LOGIC ---
-                const rpeVal = parseInt(lastEntry.rpe);
-                let statusColor = "#00ff88";
-                let message = "🚀 Solid! Push it: +2.5kg or +2 reps.";
-        
-                if (rpeVal >= 15) {
-                    statusColor = "#ff0000";
-                    message = "🔥 BURNOUT! Overload detected. Stay here.";
-                    infoBox.style.border = "1px solid #ff0000";
-                    infoBox.style.animation = "pulse-red 2s infinite";
-                } else if (rpeVal >= 12) {
-                    statusColor = "#ff4444";
-                    message = "⚠️ HOT! Extreme effort. Keep load.";
-                    infoBox.style.border = "1px solid #ff4444";
-                } else if (rpeVal >= 9) {
-                    statusColor = "#ffcc00";
-                    message = "💪 Heavy. Try +1 rep next.";
-                    infoBox.style.border = "1px solid #ffcc00";
-                } else {
-                    infoBox.style.border = "1px solid #00f2ff";
-                    infoBox.style.animation = "none";
-                }
-        
-                content += `<span style="color:${statusColor}; font-weight:bold;">${message}</span>`;
-            }
-    const setsToday = getTodaySets(exerciseName);
-    content += `<br><b style="color:#fff">Current Session: Set #${setsToday}</b>`;
-    infoBox.innerHTML = content;
-} 
-
-
-function saveWorkoutToLog() {
-    let exType = $("exercise-type").value;
-    let weight = $("weight-in").value;
-    let reps = $("reps-in").value;
-    let rpe = $("rpe-select").value;
-    let currentUser = $("user-selector").value;
-
-    if (!exType || !reps) return alert("Fill required data!");
-
-    if (weight === "" || weight === "0") weight = "BW";
-
-    let entry = {
-        user: currentUser,
-        date: new Date().toLocaleDateString(),
-        day: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][new Date().getDay()],
-        exercise: exType,
-        weight: weight,
-        reps: reps,
-        rpe: rpe,
-        set: getTodaySets(exType)
-    };
-
-    workoutHistory.unshift(entry);
-    localStorage.setItem('workoutLogs', JSON.stringify(workoutHistory));
-    
-    renderLog();
-    showLastResult(exType);
-    startRestTimer();
-}
-
-function renderLog() {
-    const listContainer = $("workout-list");
-    if (!listContainer) return;
-    listContainer.innerHTML = ""; 
-    let html = `<h3 style="color:#00f2ff">${currentLang === 'pl' ? 'Aktywnosc' : 'Activity'}</h3><ul>`;
-    workoutHistory.slice(0, 5).forEach(item => {
-        html += `<li style="border-bottom: 1px solid #333; padding: 5px 0; list-style:none; font-size:0.85em;">
-            <b>${item.exercise}</b>: ${item.weight}kg x ${item.reps} <small>(RPE ${item.rpe})</small>
-        </li>`;
+    let html = `<h3 style="color:#00f2ff">${currentLang === 'pl' ? 'Aktywność' : 'Activity'}</h3><ul>`;
+    history.slice(0, 5).forEach(i => {
+        // tlumaczenie w logach na zywo
+        const translatedName = langData[currentLang].exNames[i.exercise] || i.exercise;
+        html += `<li style="margin-bottom:5px;"><b>${translatedName}</b>: ${i.exercise}</b>: ${i.weight}kg x ${i.reps} <small>(RPE ${i.rpe})</small></li>`;
     });
-    listContainer.innerHTML = html + "</ul>";
+    list.innerHTML = html + "</ul>";
 }
 
-// --- 3.1 INPUT VISUAL FEEDBACK ---
-function applyInputFeedback() {
-    const weightIn = $("weight-in");
-    const rpeIn = $("rpe-select");
-
-    if (weightIn) {
-        weightIn.addEventListener('input', () => {
-            // Highlight when pushing heavy iron
-            weightIn.style.borderColor = weightIn.value > 100 ? "#00f2ff" : "#333";
-            weightIn.style.boxShadow = weightIn.value > 100 ? "0 0 10px #00f2ff" : "none";
-        });
-    }
-
-    if (rpeIn) {
-        rpeIn.addEventListener('change', () => {
-            // Color feedback based on effort (RPE)
-            const val = parseInt(rpeIn.value);
-            if (val >= 15) rpeIn.style.color = "#ff4444"; // Danger/Burnout
-            else if (val >= 10) rpeIn.style.color = "#ffcc00"; // Heavy
-            else rpeIn.style.color = "#00ff88"; // Solid
-        });
-    }
-}
-
-// --- 4. TIMER SYSTEM ---
+// --- TIMER & UI ---
 let timerInterval;
 function startRestTimer() {
-    let seconds = parseInt($("training-goal").value) || 90;
-    clearInterval(timerInterval);
-    let timeLeft = seconds;
+    let timeLeft = parseInt($("training-goal").value) || 90;
     const display = $("timer-display");
-    if (display) display.style.display = "block";
-
+    display.style.display = "block";
+    clearInterval(timerInterval);
     timerInterval = setInterval(() => {
         timeLeft--;
         if ($("time-left")) $("time-left").innerText = timeLeft;
         if (timeLeft <= 0) {
             clearInterval(timerInterval);
-            const sound = $("timer-sound");
-            if (sound) sound.play().catch(() => {});
-            if (window.navigator.vibrate) window.navigator.vibrate([300, 100, 300]);
-            if (display) display.innerHTML = "<b>🔥 GO! 🔥</b>";
-            setTimeout(() => { if(display) display.style.display = "none"; }, 3000);
+            if ($("timer-sound")) $("timer-sound").play().catch(()=>{});
+            display.innerHTML = "<b>🔥 GO! 🔥</b>";
+            setTimeout(() => location.reload(), 3000);
         }
     }, 1000);
 }
 
-// --- 5. LOCALIZATION DATA (FULL SET) ---// --- 5. LOCALIZATION DATA (FULL ARSENAL) ---
-const langData = {
+const injectVisualFeedback = () => {
+    const wIn = $("weight-in");
+    if (wIn) wIn.oninput = () => wIn.style.boxShadow = wIn.value > 100 ? "0 0 10px #00f2ff" : "none";
+};
+
+// --- DATA MAINTENANCE ---
+const exportSystemBackup = () => {
+    const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS)) || ["CezArv"];
+    const backup = { users: JSON.stringify(users), profiles: {}, logs: {} };
+    users.forEach(u => {
+        backup.profiles[u] = localStorage.getItem(STORAGE_KEYS.PROFILES + u);
+        backup.logs[u] = localStorage.getItem(STORAGE_KEYS.LOGS + u);
+    });
+    const blob = new Blob([JSON.stringify(backup)], {type: "application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `ArvGym_Backup.json`; a.click();
+};
+
+const importFullData = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const backup = JSON.parse(e.target.result);
+        localStorage.setItem(STORAGE_KEYS.USERS, backup.users);
+        const users = JSON.parse(backup.users);
+        users.forEach(u => {
+            if (backup.profiles[u]) localStorage.setItem(STORAGE_KEYS.PROFILES + u, backup.profiles[u]);
+            if (backup.logs[u]) localStorage.setItem(STORAGE_KEYS.LOGS + u, backup.logs[u]);
+        });
+        location.reload();
+    };
+    reader.readAsText(file);
+};
+
+function renderFullHistory() {
+    const activeUser = $("user-selector").value;
+    const history = JSON.parse(localStorage.getItem(STORAGE_KEYS.LOGS + activeUser)) || [];
+    let html = `<table style="width:100%; color:white;"><tr><th>Date</th><th>Ex</th><th>Kg</th><th>Reps</th></tr>`;
+    history.forEach(i => { html += `<tr><td>${i.date}</td><td>${i.exercise}</td><td>${i.weight}</td><td>${i.reps}</td></tr>`; });
+    if ($("full-history-table")) $("full-history-table").innerHTML = html + "</table>";
+}
+
+const deleteActiveProfile = () => {
+    const u = $("user-selector").value;
+    if (u === "CezArv") return alert("Cannot delete CezArv");
+    if (confirm(`Delete ${u}?`)) {
+        let users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS)).filter(i => i !== u);
+        localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+        localStorage.removeItem(STORAGE_KEYS.PROFILES + u);
+        localStorage.removeItem(STORAGE_KEYS.LOGS + u);
+        location.reload();
+    }
+};
+
+const renderUserSelector = () => {
+    const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS)) || ["CezArv"];
+    if ($("user-selector")) $("user-selector").innerHTML = users.map(u => `<option value="${u}">${u}</option>`).join('');
+};
+
+function changeLang(l) { 
+    currentLang = l;
+    const lang = langData[l]; // FIX: Tu była jedynka zamiast "l"
+
+    // Tłumaczenie etykiet
+    if ($("lbl-user-title")) $("lbl-user-title").innerText = lang.user;
+    if ($("lbl-focus-title")) $("lbl-focus-title").innerText = lang.focus;
+    if ($("lbl-biometry-title")) $("lbl-biometry-title").innerText = lang.stats.title;
+    if ($("lbl-bmi-text")) $("lbl-bmi-text").innerText = lang.stats.bmi + ":";
+    if ($("lbl-weight-text")) $("lbl-weight-text").innerText = lang.stats.weight;
+    if ($("lbl-exercise-title")) $("lbl-exercise-title").innerText = lang.ex;
+    
+    if ($("btn-save-workout")) $("btn-save-workout").innerText = lang.save;
+    if ($("viewHistoryBtn")) $("viewHistoryBtn").innerText = lang.historyBtn;
+    
+    // FIX: Dla inputów używamy .placeholder, nie .innerText
+    if ($("weight-in")) $("weight-in").placeholder = lang.weight;
+    if ($("reps-in")) $("reps-in").placeholder = lang.reps;
+
+    // Tłumaczenie listy ćwiczeń (select)
+    const select = $("exercise-type");
+    if (select) {
+        const options = select.querySelectorAll('option');
+        options.forEach(opt => {
+            if (opt.value && lang.exNames[opt.value]) {
+                opt.innerText = lang.exNames[opt.value];
+            }
+        });
+    }
+    
+    syncBiometryUI(); 
+    renderLog(); // Wywołujemy bez argumentu, funkcja sama sobie pobierze logi
+    console.log(`SYSTEM // Language switched to: ${l.toUpperCase()}`); 
+}
+
+function renderLog(history = []) {
+    const list = $("workout-list");
+    if (!list) return;
+    
+    if (history.length === 0) {
+        const activeUser = $("user-selector").value;
+        history = JSON.parse(localStorage.getItem(STORAGE_KEYS.LOGS + activeUser)) || [];
+    }
+    
+    let html = `<h3 style="color:#00f2ff">${currentLang === 'pl' ? 'Aktywność' : 'Activity'}</h3><ul>`;
+    history.slice(0, 5).forEach(i => {
+        // Tłumaczenie nazwy ćwiczenia w logu
+        const translatedName = langData[currentLang].exNames[i.exercise] || i.exercise;
+        // FIX: Usunięte podwójne wyświetlanie nazwy
+        html += `<li style="margin-bottom:5px;"><b>${translatedName}</b>: ${i.weight}kg x ${i.reps} <small>(RPE ${i.rpe})</small></li>`;
+    });
+    list.innerHTML = html + "</ul>";
+}
+
+
+const langData = { 
     en: {
-        user: "User", focus: "Training Focus:", ex: "Exercise:", weight: "Weight (kg)", reps: "Reps",
-        save: "SAVE SESSION", recent: "Recent Activity", historyBtn: "HISTORY",
-        stats: { title: "---BODY METRICS---", bmi: "BMI", weight: "Weight (kg)", unitLabel: "System: ", challenge: "Challenges" },
+        user: "User", 
+        focus: "Training Focus:", 
+        ex: "Exercise:", weight: "Weight (kg)", 
+        reps: "Reps",
+        save: "SAVE SESSION", 
+        recent: "Recent Activity", 
+        historyBtn: "HISTORY",
+        stats: { 
+            title: "---BODY METRICS---", 
+            bmi: "BMI", 
+            weight: "Weight (kg)", 
+            unitLabel: "System: ", 
+            challenge: "Challenges" },
         exNames: {
             // Chest
             "Chest-Bench-Press": "Flat Bench Press (Barbell)", 
@@ -352,9 +372,20 @@ const langData = {
         }
     },
     pl: {
-        user: "Uzytkownik", focus: "Cel:", ex: "Cwiczenie:", weight: "Ciezar (kg)", reps: "Powt.",
-        save: "ZAPISZ", recent: "Aktywnosc", historyBtn: "HISTORIA",
-        stats: { title: "---PARAMETRY---", bmi: "BMI", weight: "Waga (kg)", unitLabel: "System ", challenge: "Wyzwania" },
+        user: "Uzytkownik",
+            focus: "Cel:",
+            ex: "Cwiczenie:",
+            weight: "Ciezar (kg)", 
+            reps: "Powt.",
+            save: "ZAPISZ",
+            recent: "Aktywnosc", 
+            historyBtn: "HISTORIA",
+            stats: { 
+                title: "---PARAMETRY---",
+                bmi: "BMI", 
+                weight: "Waga (kg)", 
+                unitLabel: "System ", 
+                challenge: "Wyzwania" },
         exNames: {
             // Klatka
             "Chest-Bench-Press": "Wyciskanie na plaskiej (sztanga)", 
@@ -409,110 +440,43 @@ const langData = {
     }
 };
 
+window.onload = initializeArvGym;
 
-function changeLang(lang) {
-    currentLang = lang;
-    const d = langData[lang];
-    if ($("lbl-user-select")) $("lbl-user-select").innerText = d.user;
-    const saveBtn = document.querySelector('.save-btn');
-    if (saveBtn) saveBtn.innerText = d.save;
-    updateBiometry();
-    renderLog();
-}
+function injectExercise() {
+    const name = document.getElementById('inj-name').value;
+    const details = document.getElementById('inj-details').value;
 
-// --- 6. INITIALIZATION ---
-window.loadUsers = function() {
-    const select = $("user-selector");
-    if (!select) return;
-    let users = JSON.parse(localStorage.getItem('gym_users')) || ['CezArv'];
-    select.innerHTML = "";
-    users.forEach(name => {
-        const opt = document.createElement('option');
-        opt.value = name; opt.text = name;
-        select.add(opt);
-    });
-};
-
-window.onload = () => {
-    window.loadUsers();       
-    changeLang('en'); 
-    applyInputFeedback();
-};
-
-window.promptAddUser = function() {
-    const newName = prompt(currentLang === 'pl' ? "Podaj imię nowego użytkownika:" : "Enter new user name:");
-    
-    if (newName && newName.trim() !== "") {
-        let users = JSON.parse(localStorage.getItem('gym_users')) || ['ARV'];
-        
-        if (users.includes(newName.trim())) {
-            alert(currentLang === 'pl' ? "Ten profil już istnieje!" : "This profile already exists!");
-            return;
-        }
-        
-        users.push(newName.trim());
-        localStorage.setItem('gym_users', JSON.stringify(users));
-        
-        window.loadUsers(); // Odświeża listę w selektorze
-        $("user-selector").value = newName.trim(); // Przełącza na nowego usera
-        alert(currentLang === 'pl' ? "Dodano użytkownika: " + newName : "User added: " + newName);
-    }
-};
-
-
-// --- 7. BACKUP & PROFILE MANAGEMENT ---
-
-// Professional Export: Full system backup (Profile + History + Users)
-window.exportData = function() {
-    const backup = { 
-        profile: userProfile, 
-        history: workoutHistory,
-        users: JSON.parse(localStorage.getItem('gym_users')) || ['CezArv']
-    };
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backup));
-    const dl = document.createElement('a');
-    dl.setAttribute("href", dataStr);
-    
-    // Dynamic filename based on current date
-    const date = new Date().toISOString().slice(0, 10);
-    dl.setAttribute("download", `CezArv_Backup_${date}.json`);
-    
-    document.body.appendChild(dl); // Best practice for cross-browser compatibility
-    dl.click();
-    dl.remove();
-};
-
-// Compatibility Alias (Points to the new export function)
-window.exportProfile = window.exportData;
-
-// The "Scalpel": Secure profile & data deletion
-window.deleteCurrentProfile = function() {
-    const select = $("user-selector");
-    const userToDelete = select.value;
-
-    let users = JSON.parse(localStorage.getItem("gym_users")) || ['CezArv'];
-    
-    // Survival Rule: At least one user must remain
-    if (users.length <= 1) {
-        alert(currentLang === 'pl' ? "Nie możesz usunąć ostatniego profilu!" : "Cannot delete the last remaining profile!");
+    if (!name || !details) {
+        alert("Cezar, uzupełnij oba pola!");
         return;
     }
-    
-    const confirmMsg = currentLang === 'pl' ? `Czy na pewno usunąć profil: ${userToDelete}?` : `Delete profile: ${userToDelete}?`;
-    
-    if (confirm(confirmMsg)) {
-        // Remove from user list
-        users = users.filter(u => u !== userToDelete);
-        localStorage.setItem('gym_users', JSON.stringify(users));
+
+    const entry = {
+        id: Date.now(),
+        time: new Date().toLocaleTimeString(),
+        exercise: `[MANUAL] ${name}`,
+        details: details
+    };
+
+    // Próbujemy znaleźć Twoją tablicę danych (szukamy pod różnymi nazwami)
+    let targetLog = null;
+    if (typeof workoutLogs !== 'undefined') targetLog = workoutLogs;
+    else if (typeof workoutData !== 'undefined') targetLog = workoutData;
+    else if (typeof logs !== 'undefined') targetLog = logs;
+
+    if (targetLog) {
+        targetLog.push(entry);
+        // Próbujemy odświeżyć widok - szukamy Twojej funkcji renderującej
+        if (typeof renderLogs === 'function') renderLogs();
+        else if (typeof updateUI === 'function') updateUI();
+        else if (typeof displayWorkout === 'function') displayWorkout();
         
-        // Purge only the logs belonging to this user
-        workoutHistory = workoutHistory.filter(h => h.user !== userToDelete);
-        localStorage.setItem('workoutLogs', JSON.stringify(workoutHistory));
+        // Zapisujemy w pamięci
+        localStorage.setItem('arvGymData', JSON.stringify(targetLog));
         
-        alert(currentLang === 'pl' ? "Profil i jego dane usunięte." : "Profile and data deleted.");
-        location.reload(); // Refresh to rebuild the world
+        document.getElementById('inj-name').value = '';
+        document.getElementById('inj-details').value = '';
+    } else {
+        alert("System nie widzi bazy danych. Sprawdź konsolę (F12).");
     }
-};
-
-
-
+}

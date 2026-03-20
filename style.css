@@ -1,167 +1,189 @@
 /* =========================================
-   ARVGYM 3.0 - CORE STYLES
+   ARV GYM v3.1 - CSS REPAIR (NO HTML TOUCH)
    ========================================= */
 
-/* 1. ZMIENNE (TUTAJ ZMIENIASZ KOLOR CAŁEJ APKI) */
-:root {
+   :root {
     --primary-color: #00f2ff;
     --bg-dark: #0a0a0a;
     --card-bg: #161616;
     --text-main: #ffffff;
-    --accent-gold: #ffcc00;
+    --neon-purple: #ff00ff;
+    --danger: #ff4444;
 }
 
-/* 2. LAYOUT (PODSTAWY) */
-body { background: var(--bg-dark); color: var(--text-main); font-family: 'Inter', sans-serif; }
-
-/* 3. KOMPONENTY (KARTY, PRZYCISKI) */
-.card { background: var(--card-bg); border-radius: 12px; padding: 15px; }
-
-/* 4. NOWOŚĆ 3.0: BIOMETRIA I WYZWANIA (DODAJ TU STYLE DLA NOWEJ SEKCJI) */
-#biometry-section { border-left: 4px solid var(--primary-color); }
-.achievement-badge { background: linear-gradient(45deg, #111, #222); border: 1px solid var(--accent-gold); }
-
-
-/* --- GŁÓWNY FUNDAMENT --- */
-body {
-    background-color: #121212;
-    color: #ffffff;
-    font-family: 'Orbitron', sans-serif;
+/* 1. RESET I PODSTAWA */
+* {
+    box-sizing: border-box; /* Kluczowe: zatrzymuje puchnięcie elementów */
     margin: 0;
     padding: 0;
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    font-family: 'Orbitron', sans-serif;
     overflow-x: hidden;
 }
 
+/* 2. LAYOUT - NAPRAWA PIONOWEGO PASKA */
 .main-container {
     display: flex;
     min-height: 100vh;
 }
 
-/* --- PASEK BOCZNY (NEON) --- */
 .side-bar {
     width: 45px;
-    background: #1a1a1a;
+    background: #000;
+    border-right: 2px solid var(--primary-color);
     display: flex;
     align-items: center;
     justify-content: center;
-    border-right: 2px solid #00f2ff;
-    position: fixed;
+    position: fixed; /* Pasek zawsze na miejscu */
     height: 100vh;
     z-index: 100;
-    box-shadow: 5px 0 15px rgba(0, 242, 255, 0.15);
 }
 
 .side-bar h1 {
     writing-mode: vertical-rl;
     transform: rotate(180deg);
     font-size: 1.1rem;
-    letter-spacing: 4px;
-    color: #00f2ff;
-    margin: 0;
+    color: var(--primary-color);
+    letter-spacing: 5px;
     white-space: nowrap;
 }
 
-/* --- GŁÓWNA TREŚĆ (ODKLEJENIE) --- */
+/* 3. TREŚĆ GŁÓWNA - ODKLEJENIE OD PASKA */
 .main-content {
     flex: 1;
-    margin-left: 45px; /* Szerokość paska */
-    padding-left: 25px !important; /* MOCNE odklejenie od neonu */
-    padding-right: 15px;
-    padding-top: 20px;
-    padding-bottom: 40px;
+    margin-left: 45px; /* Szerokość side-bara */
+    padding: 20px 25px;
     display: flex;
     flex-direction: column;
     gap: 20px;
+    width:%20calc(100%25%20-%2045px);
+    max-width: 650px; /* Żeby na tablecie nie latało po całym ekranie */
 }
 
-/* --- KARTY (PUDEŁKA) --- */
+/* 4. KARTY I SEKCJE */
 .card {
-    background: #1e1e1e;
-    border-radius: 12px;
-    padding: 20px !important; /* Tekst w środku nie dotknie krawędzi */
-    border: 1px solid #333;
+    background: #111;
+    border-radius: 15px;
+    padding: 20px;
+    border: 1px solid #222;
     box-shadow: 0 4px 15px rgba(0,0,0,0.5);
 }
 
-/* --- INPUTY I ELEMENTY --- */
-.input-group {
-    margin-bottom: 15px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+/* Specyficzny fix dla biometrii (żeby wyglądała jak na screenie) */
+#biometry-section {
+    border: 1px solid var(--primary-color);
+    background: rgba(0, 242, 255, 0.05);
 }
 
+/* 5. PRZYCISKI I INPUTY - KONIEC Z PUCHNIĘCIEM */
 input, select {
-    background: #2a2a2a;
-    border: 1px solid #444;
-    color: white;
+    width: 100%;
+    background: #1a1a1a;
+    border: 1px solid #333;
+    color: #fff;
     padding: 12px;
     border-radius: 8px;
     font-family: 'Orbitron', sans-serif;
+    margin-bottom: 5px;
 }
 
-.save-btn {
+.btn-save-workout, .save-btn {
     width: 100%;
-    padding: 15px;
-    background: linear-gradient(135deg, #00f2ff, #0072ff);
+    padding: 16px;
+    background: linear-gradient(135deg, #0072ff, #00f2ff);
     border: none;
     color: white;
     font-weight: bold;
-    border-radius: 8px;
+    border-radius: 10px;
+    cursor: pointer;
     text-transform: uppercase;
-    margin-top: 10px;
 }
 
-/* --- HISTORIA (LOGI) --- */
-#workout-list div {
-    padding: 10px;
-    margin-bottom: 8px;
-    background: rgba(255, 255, 255, 0.03);
-    border-left: 3px solid #00f2ff;
-    border-radius: 4px;
+/* 6. STOPKA - EKSPORT / LOAD / PURGE (FIX ROZMIARU) */
+.settings-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0 40px 0;
+}
+
+.small-btn, .action-btn {
+    height: 35px;
+    padding: 0 12px;
+    font-size: 0.7rem;
+    background: transparent;
+    border: 1px solid var(--primary-color);
+    color: var(--primary-color);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.btn-danger, .danger {
+    border-color: var(--danger);
+    color: var(--danger);
+}
+
+/* 7. MANUAL INJECTION - STREFA FIOLETOWA */
+
+#manual-zone, #manual-injection {
+    margin-left: 5px; /* Minimalny odstęp od krawędzi contentu */
+    margin-right: 5px;
+    border: 2px dashed #ff00ff;
+    background: rgba(255, 0, 255, 0.05);
+    padding: 15px;
+    border-radius: 15px;
+    
+    /* TO JEST KLUCZ: */
+    display: block; 
+    clear: both;
+    position: relative; 
+    z-index: 10; /* Upewnia się, że jest nad tłem, ale pod logo jeśli trzeba */
+}
+
+/* Naprawa przycisków wewnątrz injection, żeby nie były gigantyczne */
+#manual-zone input, #manual-zone button {
+    height: 40px;
     font-size: 0.9rem;
+    margin-bottom: 10px;
 }
 
-#workout-log-container {
-    max-height: 400px;
-    overflow-y: auto;
-}
-
-.input-group-row {
+/* 8. JĘZYK - MAŁE PRZYCISKI */
+.lang-controls {
     display: flex;
     gap: 10px;
-    align-items: center;
+    margin-bottom: 15px;
 }
 
-.small-btn {
-    background: transparent;
-    border: 1px solid #00f2ff;
-    color: #00f2ff;
-    padding: 10px 15px;
-    border-radius: 8px;
-    font-size: 1.2rem;
+.lang-btn {
+    background: #fff;
+    color: #000;
+    border: none;
+    padding: 4px 10px;
+    border-radius: 10px;
+    font-size: 0.7rem;
     cursor: pointer;
-    box-shadow: 0 0 10px rgba(0, 242, 255, 0.2);
 }
 
-.small-btn:active {
-    background: #00f2ff;
-    color:#000;
+.modal-content {
+    max-height: 90vh;
+    display:flex;
+    flex-direction: column;
 }
 
-#user-input-panel {
-    transition: all 0.3s ease;
-    animation: fadeIn 0.4s;
+#full-history-table {
+    overflow-y: auto; /* scroll bar */
+    margin-top: 15px;
+    border-top: 1px solid #333;
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
+.button-user-add {
+    color: yelow;
 }
-
-@keyframes pulse-red {
-    0% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7); }
-    70% { box-shadow: 0 0 0 10px rgba(255, 0, 0, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); }
-  }
-  
