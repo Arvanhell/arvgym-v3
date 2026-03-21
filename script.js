@@ -169,7 +169,7 @@ const saveWorkoutToLog = () => {
     startRestTimer();
 };
 
-function renderLg(history = []) {
+function renderLog(history = []) {
     const list = $("workout-list");
     if (!list) return;
     
@@ -305,26 +305,6 @@ function changeLang(l) {
     renderLog(); // Wywołujemy bez argumentu, funkcja sama sobie pobierze logi
     console.log(`SYSTEM // Language switched to: ${l.toUpperCase()}`); 
 }
-
-function renderLog(history = []) {
-    const list = $("workout-list");
-    if (!list) return;
-    
-    if (history.length === 0) {
-        const activeUser = $("user-selector").value;
-        history = JSON.parse(localStorage.getItem(STORAGE_KEYS.LOGS + activeUser)) || [];
-    }
-    
-    let html = `<h3 style="color:#00f2ff">${currentLang === 'pl' ? 'Aktywność' : 'Activity'}</h3><ul>`;
-    history.slice(0, 5).forEach(i => {
-        // Tłumaczenie nazwy ćwiczenia w logu
-        const translatedName = langData[currentLang].exNames[i.exercise] || i.exercise;
-        // FIX: Usunięte podwójne wyświetlanie nazwy
-        html += `<li style="margin-bottom:5px;"><b>${translatedName}</b>: ${i.weight}kg x ${i.reps} <small>(RPE ${i.rpe})</small></li>`;
-    });
-    list.innerHTML = html + "</ul>";
-}
-
 
 const langData = { 
     en: {
