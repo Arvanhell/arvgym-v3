@@ -30,11 +30,11 @@
   </div>
 
     <div class="input-group">
-      <label>Training Focus:</label>
+      <label id="lbl-focus-title">Training Focus:</label>
       <select id="training-goal">
-        <option value="90">Hypertrophy (90s rest)</option>
-        <option value="180">Power (180s rest)</option>
-        <option value="60">Cut/Shred (60s rest)</option>
+        <option id="opt-hyper" value="90">Hypertrophy (90s rest)</option>
+        <option id="opt-power" value="180">Power (180s rest)</option>
+        <option id="opt-shred" value="60">Cut/Shred (60s rest)</option>
       </select>
     </div>
 
@@ -62,9 +62,9 @@
   
 
     <div class="input-group">
-      <label>Choose Exercise:</label>
+      <label id="lbl-choose-ex">Choose Exercise:</label>
       <select id="exercise-type" onchange="showLastResult(this.value)">
-        <option value="">-- Choose Exercise --</option>
+        <option id="opt-choose-ex"value="">-- Choose Exercise --</option>
         
         <optgroup label="CHEST" id="group-chest">
           <option value="Chest-Bench-Press">Flat Bench Press (Barbell)</option>
@@ -167,8 +167,8 @@
     <div id="history-modal" class="modal" style="display:none; position:fixed; z-index:999; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.9); overflow-y:auto;">
     <div class="modal-content" style="background:#1a1a1a; margin:5% auto; padding:20px; border:1px solid #00f2ff; width:90%; border-radius:15px;">
      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <h2 style="color:#00f2ff; margin:0;">STRENGTH ARCHIVE</h2>
-     <button style="background:red; color:white; border:none; padding:10px; border-radius:5px; cursor:pointer;">CLOSE [X]</button>
+        <h2 id="lbl-archive-title" style="color:#00f2ff; margin:0;">STRENGTH ARCHIVE</h2>
+        <button id="lbl-close-inj-btn">✕</button>
         </div>
     
      <div style="margin: 20px 0;">
@@ -178,11 +178,11 @@
             <option value="03.2026">March 2026</option>
             <option value="02.2026">February 2026</option>
         </select>
-        <div id="manual-zone" style="background: rgba(255, 0, 255, 0.1); border: 2px dashed #ff00ff; padding: 15px; margin: 10px 0; border-radius: 15px; text-align: center;">
-          <h2 style="color: #ff00ff; margin: 0 0 10px 0;">💉 MANUAL INJECT v3.1</h2>
-          <input type="text" id="inj-name" placeholder="Co robiłeś?" style="padding: 10px; border-radius: 5px; border: none; margin-right: 5px;">
-          <input type="text" id="inj-details" placeholder="Sery/Powt/Kg" style="padding: 10px; border-radius: 5px; border: none; margin-right: 5px;">
-          <button onclick="injectExercise()" style="background: #ff00ff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">DODAJ</button>
+        <div id="manual-zone" class="manual-inject-container">
+          <h2 id="title-manual-inject">💉 MANUAL INJECT v3.1</h2>
+          <input type="text" id="inj-name" placeholder="Co robiłeś?">
+          <input type="text" id="inj-details" placeholder="Sery/Powt/Kg">
+          <button id="lbl-save-inj-btn" onclick="injectExercise()">ADD</button>
         </div>
     </div>
 
@@ -196,37 +196,17 @@
  <audio id="timer-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
  
  
- <div class="settings-actions" style="
-    display: flex; 
-    justify-content: flex-end; 
-    align-items: center; 
-    gap: 6px; 
-    margin-top: 15px; 
-    margin-left: 45px;
-">
+ <div class="settings-actions">
     <button  id="btn-export" class="small-btn" style="height: 34px; padding: 0 8px; display: inline-flex; align-items: center; gap: 4px; font-size: 11px; white-space: nowrap; margin: 0; box-sizing: border-box;">
         EXPORT 💾
     </button>
 
-    <label class="small-btn sector-btn" style="
-        height: 34px; 
-        padding: 0 8px; 
-        display: inline-flex; 
-        align-items: center; 
-        gap: 4px; 
-        font-size: 11px; 
-        cursor: pointer; 
-        border: 1px solid #00f2ff; 
-        margin: 0; 
-        box-sizing: border-box; 
-        white-space: nowrap;
-        line-height: normal; /* Kasuje puchnięcie od fontu */
-    ">
+    <label class="small-btn sector-btn">
         LOAD 🏗️
         <input type="file" id="import-input" style="display: none;" onchange="importFullData(event)">
     </label>
 
-    <button  id="btn-user-purge" class="small-btn btn-danger" style="height: 34px; padding: 0 8px; display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: bold; border-color: #ff4444; color: #ff4444; white-space: nowrap; margin: 0; box-sizing: border-box;">
+    <button  id="btn-user-purge" class="small-btn btn-danger" >
         💀 PURGE 💀
     </button>
 </div>

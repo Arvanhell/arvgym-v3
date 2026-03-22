@@ -20,7 +20,11 @@ const initializeArvGym = () => {
     if ($("user-selector")) $("user-selector").onchange = handleUserSwitch;
 
     // 2. Language & UI Actions
-    if ($("btn-lang-en")) $("btn-lang-en").onclick = () => changeLang('en');
+    if ($("btn-lang-en")) $("btn-lang-en").onclick = () => 
+        {
+            changeLang('en');
+            console.log('Btn change lang clicked :en');
+        };
     if ($("btn-lang-pl")) $("btn-lang-pl").onclick = () => changeLang('pl');
     if ($("btn-save-workout")) $("btn-save-workout").onclick = saveWorkoutToLog;
     if ($("btn-edit-bio")) $("btn-edit-bio").onclick = updateAthleteProfile;
@@ -34,7 +38,17 @@ const initializeArvGym = () => {
     // 4. Boot Sequence
     injectVisualFeedback();
     renderUserSelector();
+    const savedLang = localStorage.getItem('gym_last_lang') || 'en';
+    changeLang(savedLang);
+
+    const lastUser = localStorage.getItem('gym_last_session');  //new
+    if (lastUser && $("user-selector")) {                       //New
+    $("user-selector").value = lastUser;                        //New
     handleUserSwitch();
+    } else {                                                    //New
+        // if none in memory go as follow
+        handleUserSwitch();
+    }
     
     console.log("System // Boot sequence complete.");
 };
@@ -46,11 +60,12 @@ const handleUserSwitch = () => {
     const userLogs = JSON.parse(localStorage.getItem(STORAGE_KEYS.LOGS + activeUser)) || [];
     syncBiometryUI();
     renderLog(userLogs);
+    localStorage.setItem('gym_last_session', activeUser); //new in case to edit  <----- save new user
     console.log(`System // Context: ${activeUser}`);
 };
 
 const handleAddUser = () => {
-    const msg = (currentLang === 'pl') ? "Podaj imie:" : "Enter name:";
+    const msg = langData[currentLang].prompts.enterName;
     const name = prompt(msg);
     if (!name || name.trim() === "") return;
     let users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS)) || ["CezArv"];
@@ -73,10 +88,7 @@ function getBMIDetails(weight, height, bodyType) {
     else if (bmi >= 25 && bmi < 30) { status = isAthletic ? "Fit/Form" : "Overweight"; color = isAthletic ? "#00ff88" : "#ffcc00"; }
     else if (bmi >= 30) { status = isAthletic ? "Athletic/Heavy" : "Obese"; color = isAthletic ? "#00ff88" : "#ff4444"; }
 
-    if (currentLang === 'pl') {
-        const trans = { "Underweight": "Niedowaga", "Normal": "Norma", "Overweight": "Nadwaga", "Obese": "Otyłość", "Fit/Form": "Forma/Fit", "Athletic/Heavy": "Atletyczna/Masa" };
-        status = trans[status] || status;
-    }
+    const statusLabel = langData[currentLang].biometryStatus[status] || status;
     return { value: bmi, status: status, color: color };
 }
 
@@ -173,22 +185,28 @@ function renderLog(history = []) {
     const list = $("workout-list");
     if (!list) return;
     
+    // Zawsze pobieraj świeży pakiet językowy na starcie funkcji
+    const lang = langData[currentLang];
+
     if (history.length === 0) {
         const activeUser = $("user-selector").value;
         history = JSON.parse(localStorage.getItem(STORAGE_KEYS.LOGS + activeUser)) || [];
     }
     
-    let html = `<h3 style="color:#00f2ff">${currentLang === 'pl' ? 'Aktywność' : 'Activity'}</h3><ul>`;
+    // Używamy słownika zamiast sztywnego pytania o 'pl'
+    let html = `<h3 style="color:#00f2ff">${lang.ui.activityTitle}</h3><ul>`;
+    
     history.slice(0, 5).forEach(i => {
-        const translatedName = langData[currentLang].exNames[i.exercise] || i.exercise;
-        // Dodajemy wyświetlanie serii (Set X)
-        const setLabel = currentLang === 'pl' ? 'Seria' : 'Set';
+        const translatedName = lang.exNames[i.exercise] || i.exercise;
+        const setLabel = lang.ui.setLabel || 'Set'; // Słownik!
         const setDisplay = i.set ? `<span style="color:#ff00ff"> [${setLabel} ${i.set}]</span>` : '';
         
         html += `<li style="margin-bottom:5px;"><b>${translatedName}</b>${setDisplay}: ${i.weight}kg x ${i.reps} <small>(RPE ${i.rpe})</small></li>`;
     });
+    
     list.innerHTML = html + "</ul>";
 }
+
 
 
 // --- TIMER & UI ---
@@ -273,22 +291,37 @@ const renderUserSelector = () => {
 
 function changeLang(l) { 
     currentLang = l;
+    localStorage.setItem('gym_last_lang', l); // new <---- save the lang to last user
     const lang = langData[l]; // FIX: Tu była jedynka zamiast "l"
 
     // Tłumaczenie etykiet
     if ($("lbl-user-title")) $("lbl-user-title").innerText = lang.user;
     if ($("lbl-focus-title")) $("lbl-focus-title").innerText = lang.focus;
+    if ($("opt-hyper")) $("opt-hyper").innerText = lang.focusModes.hyper;    
+    if ($("opt-power")) $("opt-power").innerText = lang.focusModes.power;
+    if ($("opt-shred")) $("opt-shred").innerText = lang.focusModes.shred;
     if ($("lbl-biometry-title")) $("lbl-biometry-title").innerText = lang.stats.title;
     if ($("lbl-bmi-text")) $("lbl-bmi-text").innerText = lang.stats.bmi + ":";
     if ($("lbl-weight-text")) $("lbl-weight-text").innerText = lang.stats.weight;
     if ($("lbl-exercise-title")) $("lbl-exercise-title").innerText = lang.ex;
-    
+    if ($("lbl-choose-ex")) $("lbl-choose-ex").innerText = lang.ui.chooseEx + ":";
+    if ($("opt-choose-ex")) $("opt-choose-ex").innerText = "-- " + lang.ui.chooseEx + " --";
+    if ($("title-manual-inject")) $("title-manual-inject").innerText = "💉 " + lang.ui.manualTitle;
+    if ($("last-result-info")) $("last-result-info").innerText = lang.select;
+    if ($("lbl-save-inj-btn")) $("lbl-save-inj-btn").innerText = lang.ui.injSaveBtn;
     if ($("btn-save-workout")) $("btn-save-workout").innerText = lang.save;
     if ($("viewHistoryBtn")) $("viewHistoryBtn").innerText = lang.historyBtn;
+    if ($("lbl-archive-title")) $("lbl-archive-title").innerText = lang.ui.strengthArchive;
     
+    // Tłumaczenie Placeholderów (to jest kluczowe!)
     // FIX: Dla inputów używamy .placeholder, nie .innerText
+    
+    if ($("inj-name")) $("inj-name").placeholder = (l === 'pl' ? "Co robiłeś?" : "What did you do?");
+    if ($("inj-details")) $("inj-details").placeholder = (l === 'pl' ? "Sery/Powt/Kg" : "Sets/Reps/Weight");
     if ($("weight-in")) $("weight-in").placeholder = lang.weight;
     if ($("reps-in")) $("reps-in").placeholder = lang.reps;
+    
+    // ... i tak dalej dla każdego ID
 
     // Tłumaczenie listy ćwiczeń (select)
     const select = $("exercise-type");
@@ -313,14 +346,43 @@ const langData = {
         ex: "Exercise:", weight: "Weight (kg)", 
         reps: "Reps",
         save: "SAVE SESSION", 
-        recent: "Recent Activity", 
         historyBtn: "HISTORY",
+        select: "Select exercise to see stats...",
+        prompts: {
+            enterName: "Enter name:"
+        },            
         stats: { 
             title: "---BODY METRICS---", 
             bmi: "BMI", 
             weight: "Weight (kg)", 
             unitLabel: "System: ", 
-            challenge: "Challenges" },
+            challenge: "Challenges" 
+        },
+        biometryStatus: {
+            "Underweight": "Underweight",
+            "Normal": "Normal",
+            "Overweight": "Overweight",
+            "Obese": "Obese",
+            "Fit/Form": "Fit/Form",
+            "Athletic/Heavy": "Athletic/Heavy"
+        },
+        focusModes: {
+            hyper: "Hypertrophy (90s rest)",
+            power: "Power (180s rest)",
+            shred: "Cut/Shred (60s rest)"
+        },
+        ui: {
+            alertEmpty: "fill both fields!",
+            chooseEx: "Choose Exercise",
+            archive: "STRENGTH ARCHIVE",
+            manualTitle: "MANUAL INJECT",
+            strengthArchive: "Strength Archive",
+            injSaveBtn: "Add",
+            injectTitle: "Manual Entry",
+            activityTitle: "Activity",
+            setLabel: "Set"
+        },
+                 
         exNames: {
             // Chest
             "Chest-Bench-Press": "Flat Bench Press (Barbell)", 
@@ -373,6 +435,7 @@ const langData = {
             "ABS-Ab-Wheel": "Ab Wheel Rollout"
         }
     },
+
     pl: {
         user: "Uzytkownik",
             focus: "Cel:",
@@ -380,14 +443,46 @@ const langData = {
             weight: "Ciezar (kg)", 
             reps: "Powt.",
             save: "ZAPISZ",
-            recent: "Aktywnosc", 
             historyBtn: "HISTORIA",
+            select: "Wybierz ćwiczenie, aby zobaczyć statystyki... ",
+            prompts: {
+                enterName: "Podaj imię:"
+            },   
             stats: { 
                 title: "---PARAMETRY---",
                 bmi: "BMI", 
                 weight: "Waga (kg)", 
                 unitLabel: "System ", 
-                challenge: "Wyzwania" },
+                challenge: "Wyzwania" 
+            },
+            biometryStatus: {
+                    "Underweight": "Niedowaga",
+                    "Normal": "Norma",
+                    "Overweight": "Nadwaga",
+                    "Obese": "Otyłość",
+                    "Fit/Form": "Forma/Fit",
+                    "Athletic/Heavy": "Atletyczna/Masa"
+         },
+
+     focusModes: {
+                hyper: "Hipertrofia (90s odpoczynku)",
+                power: "Siła (180s odpoczynku)",
+                shred: "Rzeźba/Redukcja (60s odpoczynku)"
+        },  
+             ui: {
+                archive: "ARCHIWUM SIŁY",
+                selectEx: "Wybierz ćwiczenie...",
+                filter: "Filtruj miesiąc",
+                alertEmpty: "Uzupełnij wszystkie pola!",
+                manualTitle: "WPIS RĘCZNY",
+                chooseEx: "Wybierz ćwiczenie",
+                strengthArchive: "Archiwum Siły",
+                injSaveBtn: "Dodaj",
+                injectTitle: "Ręczny wpis",
+                filterMonth: "Filtruj miesiąc",
+                activityTitle: "Aktywność",
+                setLabel: "Seria"
+        },
         exNames: {
             // Klatka
             "Chest-Bench-Press": "Wyciskanie na plaskiej (sztanga)", 
@@ -445,11 +540,13 @@ const langData = {
 window.onload = initializeArvGym;
 
 function injectExercise() {
-    const name = document.getElementById('inj-name').value;
-    const details = document.getElementById('inj-details').value;
-
+    const name = $('inj-name').value;
+    const details = $('inj-details').value;
+    const activeUserName = $("user-selector").value;
+    const alertMsg = `${activeUserName}, ${langData[currentLang].ui.alertEmpty}`;
+    
     if (!name || !details) {
-        alert("Cezar, uzupełnij oba pola!");
+        alert(alertMsg);
         return;
     }
 
@@ -476,8 +573,8 @@ function injectExercise() {
         // Zapisujemy w pamięci
         localStorage.setItem('arvGymData', JSON.stringify(targetLog));
         
-        document.getElementById('inj-name').value = '';
-        document.getElementById('inj-details').value = '';
+        $('inj-name').value = '';
+        $('inj-details').value = '';
     } else {
         alert("System nie widzi bazy danych. Sprawdź konsolę (F12).");
     }

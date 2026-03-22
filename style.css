@@ -155,6 +155,73 @@ input, select {
     margin-bottom: 10px;
 }
 
+#lbl-close-inj-btn {
+    background: transparent;
+    color: #ff4d4d;
+    border: 2px solid #ff4d4d;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 8px rgba(255, 77, 77, 0.3);
+    outline: none;
+}
+
+#lbl-close-inj-btn:hover {
+    background: #ff4d4d;
+    color: white;
+    box-shadow: 0 0 15px #ff4d4d;
+    transform: scale(1.1);
+}
+
+#lbl-close-inj-btn:active {
+    transform: scale(0.9);
+}
+
+/* Kontener dla ręcznego wpisu */
+.manual-inject-container {
+    background: rgba(255, 0, 255, 0.1);
+    border: 2px dashed #ff00ff;
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 15px;
+    text-align: center;
+}
+
+#title-manual-inject {
+    color: #ff00ff;
+    margin: 0 0 10px 0;
+}
+
+/* Styl dla inputów wewnątrz zony */
+.manual-inject-container input {
+    padding: 10px;
+    border-radius: 5px;
+    border: none;
+    margin: 5px; /* Dodałem mały margines z każdej strony */
+}
+
+/* Styl dla przycisku ADD */
+#lbl-save-inj-btn {
+    background: #ff00ff;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+#lbl-save-inj-btn:hover {
+    box-shadow: 0 0 15px #ff00ff;
+    transform: translateY(-2px);
+}
 /* 8. JĘZYK - MAŁE PRZYCISKI */
 .lang-controls {
     display: flex;
@@ -186,4 +253,43 @@ input, select {
 
 .button-user-add {
     color: yelow;
+}
+
+/* Footer */
+.settings-actions {
+    display:%20flex;
+    justify-content:flex-end;
+    align-items: center gap%3A%206px;
+    margin-top: 15px;
+    margin-left: 45px;
+}
+
+.small-btn sector-btn {
+    height:4px;
+    padding: 0 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    cursor: pointer;
+    border: 1px solid #00f2ff;
+    margin: 0;
+    box-sizing: border-box;
+    white-space: nowrap;
+    line-height:normal; /* kasuje puchniecie */
+}
+
+#btn-user-purge {
+    height: 34px;
+    padding: 0 8px; 
+    display: inline-flex; 
+    align-items: center; 
+    gap: 4px; 
+    font-size: 11px; 
+    font-weight: bold; 
+    border-color: #ff4444; 
+    color: #ff4444; 
+    white-space: nowrap; 
+    margin: 0; 
+    box-sizing: border-box;
 }
