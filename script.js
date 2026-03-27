@@ -1,3 +1,5 @@
+
+
 // --- CONFIG ARVGYM 3.0 ---
 const APP_VERSION = "3.0.0";
 
@@ -7,11 +9,20 @@ const STORAGE_KEYS = {
     LOGS: 'gym_logs_'
 };
 
+
 const $ = (id) => document.getElementById(id);
 let currentLang = 'en';
 
 // --- INITIALIZATION ---
 const initializeArvGym = () => {
+    // registry in offline mode 
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js')
+                .then(reg => console.log('Arv Gym Offline Ready!'))
+                .catch(err => console.log('SW Registration failed', err));
+        });
+    }
     console.log(`System // ArvGym v${APP_VERSION} Booting...`);
 
     // 1. Athlete Management
@@ -20,11 +31,10 @@ const initializeArvGym = () => {
     if ($("user-selector")) $("user-selector").onchange = handleUserSwitch;
 
     // 2. Language & UI Actions
-    if ($("btn-lang-en")) $("btn-lang-en").onclick = () => 
-        {
-            changeLang('en');
-            console.log('Btn change lang clicked :en');
-        };
+    if ($("btn-lang-en")) $("btn-lang-en").onclick = () => {
+        changeLang('en');
+        console.log('Btn change lang clicked :en');
+    };
     if ($("btn-lang-pl")) $("btn-lang-pl").onclick = () => changeLang('pl');
     if ($("btn-save-workout")) $("btn-save-workout").onclick = saveWorkoutToLog;
     if ($("btn-edit-bio")) $("btn-edit-bio").onclick = updateAthleteProfile;
@@ -43,13 +53,13 @@ const initializeArvGym = () => {
 
     const lastUser = localStorage.getItem('gym_last_session');  //new
     if (lastUser && $("user-selector")) {                       //New
-    $("user-selector").value = lastUser;                        //New
-    handleUserSwitch();
+        $("user-selector").value = lastUser;                        //New
+        handleUserSwitch();
     } else {                                                    //New
         // if none in memory go as follow
         handleUserSwitch();
     }
-    
+
     console.log("System // Boot sequence complete.");
 };
 
@@ -80,7 +90,7 @@ const handleAddUser = () => {
 // --- BIOMETRICS ENGINE ---
 function getBMIDetails(weight, height, bodyType) {
     if (!height || height === 0) return { value: 0, status: "N/A", color: "#aaa" };
-    const bmi = (weight / ((height/100) ** 2)).toFixed(1);
+    const bmi = (weight / ((height / 100) ** 2)).toFixed(1);
     let status = "Normal", color = "#00ff88";
     const isAthletic = ["Athletic", "Muscular", "Atletyczny", "Muskularny"].includes(bodyType);
 
@@ -98,7 +108,7 @@ function syncBiometryUI() {
     const profileKey = STORAGE_KEYS.PROFILES + activeUser;
     const data = JSON.parse(localStorage.getItem(profileKey)) || { weight: 80, height: 180, bodyType: "Athletic" };
     const bmiData = getBMIDetails(data.weight, data.height, data.bodyType);
-    
+
     if ($("bmi-value")) {
         $("bmi-value").innerText = bmiData.value;
         $("bmi-value").style.color = bmiData.color;
@@ -115,7 +125,7 @@ function updateAthleteProfile() {
     const activeUser = $("user-selector").value;
     const profileKey = STORAGE_KEYS.PROFILES + activeUser;
     const current = JSON.parse(localStorage.getItem(profileKey)) || { weight: 80, height: 180, bodyType: "Athletic" };
-    
+
     const w = parseFloat(prompt(isPl ? "Waga (kg):" : "Weight (kg):", current.weight));
     const h = parseFloat(prompt(isPl ? "Wzrost (cm):" : "Height (cm):", current.height));
     if (isNaN(w) || isNaN(h)) return;
@@ -158,23 +168,23 @@ const saveWorkoutToLog = () => {
 
     const logs = JSON.parse(localStorage.getItem(STORAGE_KEYS.LOGS + activeUser)) || [];
     //--- Number of series in an exercise (New)
-    const today = new 
+    const today = new
         Date().toLocaleDateString();
-        // how many same exercise from today
-        const setNumber = logs.filter(l => 
-            l.exercise === ex && l.date === today).length + 1;
-        // save to log     
-    logs.unshift({ 
-        exercise: ex, 
-        weight: w, 
-        reps: r, 
-        rpe: rpe, 
+    // how many same exercise from today
+    const setNumber = logs.filter(l =>
+        l.exercise === ex && l.date === today).length + 1;
+    // save to log     
+    logs.unshift({
+        exercise: ex,
+        weight: w,
+        reps: r,
+        rpe: rpe,
         date: today,
         set: setNumber // add set to database
     });
     localStorage.setItem(STORAGE_KEYS.LOGS + activeUser, JSON.stringify(logs));
     // Re 
-    $("weight-in").value = ''; 
+    $("weight-in").value = '';
     $("reps-in").value = '';
     renderLog(logs);
     showLastResult(ex);
@@ -184,7 +194,7 @@ const saveWorkoutToLog = () => {
 function renderLog(history = []) {
     const list = $("workout-list");
     if (!list) return;
-    
+
     // Zawsze pobieraj świeży pakiet językowy na starcie funkcji
     const lang = langData[currentLang];
 
@@ -192,18 +202,18 @@ function renderLog(history = []) {
         const activeUser = $("user-selector").value;
         history = JSON.parse(localStorage.getItem(STORAGE_KEYS.LOGS + activeUser)) || [];
     }
-    
+
     // Używamy słownika zamiast sztywnego pytania o 'pl'
     let html = `<h3 style="color:#00f2ff">${lang.ui.activityTitle}</h3><ul>`;
-    
+
     history.slice(0, 5).forEach(i => {
         const translatedName = lang.exNames[i.exercise] || i.exercise;
         const setLabel = lang.ui.setLabel || 'Set'; // Słownik!
         const setDisplay = i.set ? `<span style="color:#ff00ff"> [${setLabel} ${i.set}]</span>` : '';
-        
+
         html += `<li style="margin-bottom:5px;"><b>${translatedName}</b>${setDisplay}: ${i.weight}kg x ${i.reps} <small>(RPE ${i.rpe})</small></li>`;
     });
-    
+
     list.innerHTML = html + "</ul>";
 }
 
@@ -211,22 +221,47 @@ function renderLog(history = []) {
 
 // --- TIMER & UI ---
 let timerInterval;
+
 function startRestTimer() {
+    // 1. Pobieramy czas z selecta (np. 90, 180, 60)
     let timeLeft = parseInt($("training-goal").value) || 90;
     const display = $("timer-display");
+    const timeSpan = $("time-left");
+
+    // 2. Przygotowujemy UI (pokaż timer i zresetuj tekst)
     display.style.display = "block";
+    display.innerHTML = `<span style="color:#aaa; font-size:0.8em;">RESTING...</span><br>
+                         <span id="time-left" style="font-size:2.5em; color:#ffcc00; font-weight:bold;">${timeLeft}</span><span style="color:#ffcc00">s</span>`;
+
+    // 3. Czyścimy stary interwał, żeby przyspieszony licznik nie "wariaował"
     clearInterval(timerInterval);
+
+    // 4. Start odliczania
     timerInterval = setInterval(() => {
         timeLeft--;
+
+        // Aktualizacja cyferek na ekranie
         if ($("time-left")) $("time-left").innerText = timeLeft;
+
+        // 5. Co się dzieje, gdy czas minie?
         if (timeLeft <= 0) {
             clearInterval(timerInterval);
-            if ($("timer-sound")) $("timer-sound").play().catch(()=>{});
-            display.innerHTML = "<b>🔥 GO! 🔥</b>";
-            setTimeout(() => location.reload(), 3000);
+
+            // Dźwięk
+            if ($("timer-sound")) $("timer-sound").play().catch(() => { });
+
+            // Zmiana napisu na "GO!"
+            display.innerHTML = "<b style='font-size:2em; color:#00ff88;'>🔥 GO! 🔥</b>";
+
+            // 6. Czekamy 3 sekundy i chowamy baner (zamiast przeładowania strony)
+            setTimeout(() => {
+                display.style.display = "none";
+                renderLog(); // Odświeżamy widok listy, żeby wszystko było aktualne
+            }, 3000);
         }
     }, 1000);
 }
+
 
 const injectVisualFeedback = () => {
     const wIn = $("weight-in");
@@ -241,7 +276,7 @@ const exportSystemBackup = () => {
         backup.profiles[u] = localStorage.getItem(STORAGE_KEYS.PROFILES + u);
         backup.logs[u] = localStorage.getItem(STORAGE_KEYS.LOGS + u);
     });
-    const blob = new Blob([JSON.stringify(backup)], {type: "application/json"});
+    const blob = new Blob([JSON.stringify(backup)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url; a.download = `ArvGym_Backup.json`; a.click();
@@ -289,7 +324,7 @@ const renderUserSelector = () => {
     if ($("user-selector")) $("user-selector").innerHTML = users.map(u => `<option value="${u}">${u}</option>`).join('');
 };
 
-function changeLang(l) { 
+function changeLang(l) {
     currentLang = l;
     localStorage.setItem('gym_last_lang', l); // new <---- save the lang to last user
     const lang = langData[l]; // FIX: Tu była jedynka zamiast "l"
@@ -297,7 +332,7 @@ function changeLang(l) {
     // Tłumaczenie etykiet
     if ($("lbl-user-title")) $("lbl-user-title").innerText = lang.user;
     if ($("lbl-focus-title")) $("lbl-focus-title").innerText = lang.focus;
-    if ($("opt-hyper")) $("opt-hyper").innerText = lang.focusModes.hyper;    
+    if ($("opt-hyper")) $("opt-hyper").innerText = lang.focusModes.hyper;
     if ($("opt-power")) $("opt-power").innerText = lang.focusModes.power;
     if ($("opt-shred")) $("opt-shred").innerText = lang.focusModes.shred;
     if ($("lbl-biometry-title")) $("lbl-biometry-title").innerText = lang.stats.title;
@@ -312,15 +347,15 @@ function changeLang(l) {
     if ($("btn-save-workout")) $("btn-save-workout").innerText = lang.save;
     if ($("viewHistoryBtn")) $("viewHistoryBtn").innerText = lang.historyBtn;
     if ($("lbl-archive-title")) $("lbl-archive-title").innerText = lang.ui.strengthArchive;
-    
+
     // Tłumaczenie Placeholderów (to jest kluczowe!)
     // FIX: Dla inputów używamy .placeholder, nie .innerText
-    
+
     if ($("inj-name")) $("inj-name").placeholder = (l === 'pl' ? "Co robiłeś?" : "What did you do?");
     if ($("inj-details")) $("inj-details").placeholder = (l === 'pl' ? "Sery/Powt/Kg" : "Sets/Reps/Weight");
     if ($("weight-in")) $("weight-in").placeholder = lang.weight;
     if ($("reps-in")) $("reps-in").placeholder = lang.reps;
-    
+
     // ... i tak dalej dla każdego ID
 
     // Tłumaczenie listy ćwiczeń (select)
@@ -333,30 +368,30 @@ function changeLang(l) {
             }
         });
     }
-    
-    syncBiometryUI(); 
+
+    syncBiometryUI();
     renderLog(); // Wywołujemy bez argumentu, funkcja sama sobie pobierze logi
-    console.log(`SYSTEM // Language switched to: ${l.toUpperCase()}`); 
+    console.log(`SYSTEM // Language switched to: ${l.toUpperCase()}`);
 }
 
-const langData = { 
+const langData = {
     en: {
-        user: "User", 
-        focus: "Training Focus:", 
-        ex: "Exercise:", weight: "Weight (kg)", 
+        user: "User",
+        focus: "Training Focus:",
+        ex: "Exercise:", weight: "Weight (kg)",
         reps: "Reps",
-        save: "SAVE SESSION", 
+        save: "SAVE SESSION",
         historyBtn: "HISTORY",
         select: "Select exercise to see stats...",
         prompts: {
             enterName: "Enter name:"
-        },            
-        stats: { 
-            title: "---BODY METRICS---", 
-            bmi: "BMI", 
-            weight: "Weight (kg)", 
-            unitLabel: "System: ", 
-            challenge: "Challenges" 
+        },
+        stats: {
+            title: "---BODY METRICS---",
+            bmi: "BMI",
+            weight: "Weight (kg)",
+            unitLabel: "System: ",
+            challenge: "Challenges"
         },
         biometryStatus: {
             "Underweight": "Underweight",
@@ -382,55 +417,55 @@ const langData = {
             activityTitle: "Activity",
             setLabel: "Set"
         },
-                 
+
         exNames: {
             // Chest
-            "Chest-Bench-Press": "Flat Bench Press (Barbell)", 
-            "Chest-DB-Press": "Dumbbell Press", 
+            "Chest-Bench-Press": "Flat Bench Press (Barbell)",
+            "Chest-DB-Press": "Dumbbell Press",
             "Chest-Incline-Barbell": "Incline Press (Barbell)",
             "Chest-Incline-DB": "Incline Press (Dumbbell)",
-            "Chest-Flyes": "Dumbbell Flyes", 
-            "Chest-Pushups-Standard": "Pushups (Standard)", 
-            "Chest-Dips": "Chest Dips", 
+            "Chest-Flyes": "Dumbbell Flyes",
+            "Chest-Pushups-Standard": "Pushups (Standard)",
+            "Chest-Dips": "Chest Dips",
             // Back
-            "Back-Deadlift": "Deadlift (Conventional)", 
+            "Back-Deadlift": "Deadlift (Conventional)",
             "Back-Deadlift-Sumo": "Sumo Deadlift",
-            "Back-Pull-Ups": "Pull-Ups (BW/Weighted)", 
-            "Back-Lat-Pulldown": "Lat Pulldown", 
+            "Back-Pull-Ups": "Pull-Ups (BW/Weighted)",
+            "Back-Lat-Pulldown": "Lat Pulldown",
             "Back-Row-Barbell": "Barbell Row",
-            "Back-Row-Dumbbell": "Dumbbell Row", 
+            "Back-Row-Dumbbell": "Dumbbell Row",
             "Back-Seated-Row": "Seated Cable Row",
-            "Back-Hyperextensions": "Hyperextensions", 
+            "Back-Hyperextensions": "Hyperextensions",
             // Shoulders
-            "Shoulder-Military": "Military Press (Barbell)", 
-            "Shoulder-DB-Press": "Dumbbell Shoulder Press", 
-            "Shoulder-Lateral-Raises": "Lateral Raises", 
-            "Shoulder-Front-Raises": "Front Raises", 
-            "Shoulder-Face-Pulls": "Face Pulls", 
+            "Shoulder-Military": "Military Press (Barbell)",
+            "Shoulder-DB-Press": "Dumbbell Shoulder Press",
+            "Shoulder-Lateral-Raises": "Lateral Raises",
+            "Shoulder-Front-Raises": "Front Raises",
+            "Shoulder-Face-Pulls": "Face Pulls",
             "Shoulder-Rear-Delt-Flyes": "Rear Delt Flyes",
             "Shoulder-Landmine-Press": "Landmine Press",
             // Arms
-            "Arms-BB-Curl": "Barbell Curl", 
-            "Arms-DB-Hammer": "Hammer Curls", 
+            "Arms-BB-Curl": "Barbell Curl",
+            "Arms-DB-Hammer": "Hammer Curls",
             "Arms-Preacher-Curl": "Preacher Curl",
-            "Arms-Pushdowns": "Triceps Pushdown (Cable)", 
-            "Arms-Skull-Crushers": "Skull Crushers", 
+            "Arms-Pushdowns": "Triceps Pushdown (Cable)",
+            "Arms-Skull-Crushers": "Skull Crushers",
             "Arms-Dips-Triceps": "Dips (Triceps Focus)",
             "Arms-Overhead-Ext": "Overhead Triceps Extension",
             // Legs
-            "Legs-Squats": "Back Squats", 
+            "Legs-Squats": "Back Squats",
             "Legs-Front-Squat": "Front Squat",
             "Legs-Bulgarian": "Bulgarian Split Squat",
-            "Legs-Leg-Press": "Leg Press", 
-            "Legs-Leg-Extension": "Leg Extension", 
+            "Legs-Leg-Press": "Leg Press",
+            "Legs-Leg-Extension": "Leg Extension",
             "Legs-Leg-Curl": "Leg Curl",
-            "Legs-Lunge": "Lunges", 
-            "Legs-Calf-Standing": "Standing Calf Raises", 
-            "Legs-Calf-Seated": "Seated Calf Raises", 
+            "Legs-Lunge": "Lunges",
+            "Legs-Calf-Standing": "Standing Calf Raises",
+            "Legs-Calf-Seated": "Seated Calf Raises",
             // ABS
-            "ABS-Crunches": "Crunches", 
-            "ABS-Leg-Raises": "Leg Raises", 
-            "ABS-Plank": "Plank", 
+            "ABS-Crunches": "Crunches",
+            "ABS-Leg-Raises": "Leg Raises",
+            "ABS-Plank": "Plank",
             "ABS-Russian-Twist": "Russian Twist",
             "ABS-Ab-Wheel": "Ab Wheel Rollout"
         }
@@ -438,99 +473,99 @@ const langData = {
 
     pl: {
         user: "Uzytkownik",
-            focus: "Cel:",
-            ex: "Cwiczenie:",
-            weight: "Ciezar (kg)", 
-            reps: "Powt.",
-            save: "ZAPISZ",
-            historyBtn: "HISTORIA",
-            select: "Wybierz ćwiczenie, aby zobaczyć statystyki... ",
-            prompts: {
-                enterName: "Podaj imię:"
-            },   
-            stats: { 
-                title: "---PARAMETRY---",
-                bmi: "BMI", 
-                weight: "Waga (kg)", 
-                unitLabel: "System ", 
-                challenge: "Wyzwania" 
-            },
-            biometryStatus: {
-                    "Underweight": "Niedowaga",
-                    "Normal": "Norma",
-                    "Overweight": "Nadwaga",
-                    "Obese": "Otyłość",
-                    "Fit/Form": "Forma/Fit",
-                    "Athletic/Heavy": "Atletyczna/Masa"
-         },
+        focus: "Cel:",
+        ex: "Cwiczenie:",
+        weight: "Ciezar (kg)",
+        reps: "Powt.",
+        save: "ZAPISZ",
+        historyBtn: "HISTORIA",
+        select: "Wybierz ćwiczenie, aby zobaczyć statystyki... ",
+        prompts: {
+            enterName: "Podaj imię:"
+        },
+        stats: {
+            title: "---PARAMETRY---",
+            bmi: "BMI",
+            weight: "Waga (kg)",
+            unitLabel: "System ",
+            challenge: "Wyzwania"
+        },
+        biometryStatus: {
+            "Underweight": "Niedowaga",
+            "Normal": "Norma",
+            "Overweight": "Nadwaga",
+            "Obese": "Otyłość",
+            "Fit/Form": "Forma/Fit",
+            "Athletic/Heavy": "Atletyczna/Masa"
+        },
 
-     focusModes: {
-                hyper: "Hipertrofia (90s odpoczynku)",
-                power: "Siła (180s odpoczynku)",
-                shred: "Rzeźba/Redukcja (60s odpoczynku)"
-        },  
-             ui: {
-                archive: "ARCHIWUM SIŁY",
-                selectEx: "Wybierz ćwiczenie...",
-                filter: "Filtruj miesiąc",
-                alertEmpty: "Uzupełnij wszystkie pola!",
-                manualTitle: "WPIS RĘCZNY",
-                chooseEx: "Wybierz ćwiczenie",
-                strengthArchive: "Archiwum Siły",
-                injSaveBtn: "Dodaj",
-                injectTitle: "Ręczny wpis",
-                filterMonth: "Filtruj miesiąc",
-                activityTitle: "Aktywność",
-                setLabel: "Seria"
+        focusModes: {
+            hyper: "Hipertrofia (90s odpoczynku)",
+            power: "Siła (180s odpoczynku)",
+            shred: "Rzeźba/Redukcja (60s odpoczynku)"
+        },
+        ui: {
+            archive: "ARCHIWUM SIŁY",
+            selectEx: "Wybierz ćwiczenie...",
+            filter: "Filtruj miesiąc",
+            alertEmpty: "Uzupełnij wszystkie pola!",
+            manualTitle: "WPIS RĘCZNY",
+            chooseEx: "Wybierz ćwiczenie",
+            strengthArchive: "Archiwum Siły",
+            injSaveBtn: "Dodaj",
+            injectTitle: "Ręczny wpis",
+            filterMonth: "Filtruj miesiąc",
+            activityTitle: "Aktywność",
+            setLabel: "Seria"
         },
         exNames: {
             // Klatka
-            "Chest-Bench-Press": "Wyciskanie na plaskiej (sztanga)", 
-            "Chest-DB-Press": "Wyciskanie hantli", 
+            "Chest-Bench-Press": "Wyciskanie na plaskiej (sztanga)",
+            "Chest-DB-Press": "Wyciskanie hantli",
             "Chest-Incline-Barbell": "Wyciskanie skos dodatni (sztanga)",
             "Chest-Incline-DB": "Wyciskanie skos dodatni (hantle)",
-            "Chest-Flyes": "Rozpietki", 
-            "Chest-Pushups-Standard": "Pompki klasyczne", 
-            "Chest-Dips": "Dipsy (Klatka)", 
+            "Chest-Flyes": "Rozpietki",
+            "Chest-Pushups-Standard": "Pompki klasyczne",
+            "Chest-Dips": "Dipsy (Klatka)",
             // Plecy
-            "Back-Deadlift": "Martwy ciag klasyczny", 
+            "Back-Deadlift": "Martwy ciag klasyczny",
             "Back-Deadlift-Sumo": "Martwy ciag sumo",
-            "Back-Pull-Ups": "Podciaganie na drazku", 
-            "Back-Lat-Pulldown": "Sciaganie drazka wyciagu", 
+            "Back-Pull-Ups": "Podciaganie na drazku",
+            "Back-Lat-Pulldown": "Sciaganie drazka wyciagu",
             "Back-Row-Barbell": "Wioslowanie sztanga",
-            "Back-Row-Dumbbell": "Wioslowanie hantlem", 
+            "Back-Row-Dumbbell": "Wioslowanie hantlem",
             "Back-Seated-Row": "Przyciaganie linki wyciagu (siedzac)",
-            "Back-Hyperextensions": "Wyprosty na lawce rzymskiej", 
+            "Back-Hyperextensions": "Wyprosty na lawce rzymskiej",
             // Barki
-            "Shoulder-Military": "Wyciskanie zolnierskie", 
-            "Shoulder-DB-Press": "Wyciskanie hantli (barki)", 
-            "Shoulder-Lateral-Raises": "Wznosy hantli bokiem", 
-            "Shoulder-Front-Raises": "Wznosy przodem", 
-            "Shoulder-Face-Pulls": "Face Pulls", 
+            "Shoulder-Military": "Wyciskanie zolnierskie",
+            "Shoulder-DB-Press": "Wyciskanie hantli (barki)",
+            "Shoulder-Lateral-Raises": "Wznosy hantli bokiem",
+            "Shoulder-Front-Raises": "Wznosy przodem",
+            "Shoulder-Face-Pulls": "Face Pulls",
             "Shoulder-Rear-Delt-Flyes": "Odwrotne rozpietki",
             "Shoulder-Landmine-Press": "Landmine Press",
             // Ramiona
-            "Arms-BB-Curl": "Uginanie ramion ze sztanga", 
-            "Arms-DB-Hammer": "Uginanie mlotkowe", 
+            "Arms-BB-Curl": "Uginanie ramion ze sztanga",
+            "Arms-DB-Hammer": "Uginanie mlotkowe",
             "Arms-Preacher-Curl": "Modlitewnik",
-            "Arms-Pushdowns": "Prostowanie ramion (wyciag)", 
-            "Arms-Skull-Crushers": "Wyciskanie francuskie", 
+            "Arms-Pushdowns": "Prostowanie ramion (wyciag)",
+            "Arms-Skull-Crushers": "Wyciskanie francuskie",
             "Arms-Dips-Triceps": "Dipsy (Triceps)",
             "Arms-Overhead-Ext": "Wyciskanie francuskie nad glowe",
             // Nogi
-            "Legs-Squats": "Przysiady ze sztanga", 
+            "Legs-Squats": "Przysiady ze sztanga",
             "Legs-Front-Squat": "Przysiad przedni",
             "Legs-Bulgarian": "Przysiad bulgarski",
-            "Legs-Leg-Press": "Wypychanie na suwnicy", 
-            "Legs-Leg-Extension": "Prostowanie nog na maszynie", 
+            "Legs-Leg-Press": "Wypychanie na suwnicy",
+            "Legs-Leg-Extension": "Prostowanie nog na maszynie",
             "Legs-Leg-Curl": "Uginanie nog na maszynie",
-            "Legs-Lunge": "Wykroki", 
-            "Legs-Calf-Standing": "Wspiecia na palce stojac", 
-            "Legs-Calf-Seated": "Wspiecia na palce siedzac", 
+            "Legs-Lunge": "Wykroki",
+            "Legs-Calf-Standing": "Wspiecia na palce stojac",
+            "Legs-Calf-Seated": "Wspiecia na palce siedzac",
             // Brzuch
-            "ABS-Crunches": "Brzuszki", 
-            "ABS-Leg-Raises": "Wznosy nog", 
-            "ABS-Plank": "Plank (deska)", 
+            "ABS-Crunches": "Brzuszki",
+            "ABS-Leg-Raises": "Wznosy nog",
+            "ABS-Plank": "Plank (deska)",
             "ABS-Russian-Twist": "Russian Twist",
             "ABS-Ab-Wheel": "Koleko (Ab Wheel)"
         }
@@ -543,39 +578,57 @@ function injectExercise() {
     const name = $('inj-name').value;
     const details = $('inj-details').value;
     const activeUserName = $("user-selector").value;
-    const alertMsg = `${activeUserName}, ${langData[currentLang].ui.alertEmpty}`;
-    
-    if (!name || !details) {
-        alert(alertMsg);
-        return;
+    // validation
+    if (!name || !details || !activeUser) {
+         alert("Fill all fields!");
+         return;
     }
-
-    const entry = {
-        id: Date.now(),
-        time: new Date().toLocaleTimeString(),
+    // take existing logs for existing user
+    const logs = JSON.parse(localStorage.getItem(STORAGE_KEYS.LOGS + activeUser)) || [];
+    // 
+    logs.unshift({
         exercise: `[MANUAL] ${name}`,
-        details: details
-    };
+        weight: details,
+        reps: "---",
+        rpe: "---",
+        date: new Date().toLocaleDateString()
+    });
 
-    // Próbujemy znaleźć Twoją tablicę danych (szukamy pod różnymi nazwami)
-    let targetLog = null;
-    if (typeof workoutLogs !== 'undefined') targetLog = workoutLogs;
-    else if (typeof workoutData !== 'undefined') targetLog = workoutData;
-    else if (typeof logs !== 'undefined') targetLog = logs;
+    localStorage.setItem(STORAGE_KEYS.LOGS + activeUser,
+        JSON.stringify(logs));
+        // reresh list
+    renderLog(logs);
+        // clearing fields for inputs
+    $("inj-name").value = '';
+    $("inj-details").value = '';
+}
 
-    if (targetLog) {
-        targetLog.push(entry);
-        // Próbujemy odświeżyć widok - szukamy Twojej funkcji renderującej
-        if (typeof renderLogs === 'function') renderLogs();
-        else if (typeof updateUI === 'function') updateUI();
-        else if (typeof displayWorkout === 'function') displayWorkout();
-        
-        // Zapisujemy w pamięci
-        localStorage.setItem('arvGymData', JSON.stringify(targetLog));
-        
-        $('inj-name').value = '';
-        $('inj-details').value = '';
-    } else {
-        alert("System nie widzi bazy danych. Sprawdź konsolę (F12).");
-    }
+const entry = {
+    id: Date.now(),
+    time: new Date().toLocaleTimeString(),
+    exercise: `[MANUAL] ${name}`,
+    details: details
+};
+
+// Próbujemy znaleźć Twoją tablicę danych (szukamy pod różnymi nazwami)
+let targetLog = null;
+if (typeof workoutLogs !== 'undefined') targetLog = workoutLogs;
+else if (typeof workoutData !== 'undefined') targetLog = workoutData;
+else if (typeof logs !== 'undefined') targetLog = logs;
+
+if (targetLog) {
+    targetLog.push(entry);
+    // Próbujemy odświeżyć widok - szukamy Twojej funkcji renderującej
+    if (typeof renderLogs === 'function') renderLogs();
+    else if (typeof updateUI === 'function') updateUI();
+    else if (typeof displayWorkout === 'function') displayWorkout();
+
+    // Zapisujemy w pamięci
+    localStorage.setItem('arvGymData', JSON.stringify(targetLog));
+
+    $('inj-name').value = '';
+    $('inj-details').value = '';
+} else {
+    alert("System nie widzi bazy danych. Sprawdź konsolę (F12).");
+}
 }
