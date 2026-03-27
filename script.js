@@ -572,63 +572,45 @@ const langData = {
     }
 };
 
-window.onload = initializeArvGym;
-
+// --- MANUAL INJECT FUNCTION ---
 function injectExercise() {
-    const name = $('inj-name').value;
-    const details = $('inj-details').value;
-    const activeUserName = $("user-selector").value;
-    // validation
+    const nameInput = $('inj-name');
+    const detailsInput = $('inj-details');
+    const activeUser = $("user-selector").value;
+
+    const name = nameInput.value;
+    const details = detailsInput.value;
+
+    // Walidacja
     if (!name || !details || !activeUser) {
-         alert("Fill all fields!");
-         return;
+        alert(currentLang === 'pl' ? "Uzupełnij wszystkie pola!" : "Fill all fields!");
+        return;
     }
-    // take existing logs for existing user
+
+    // Pobranie logów użytkownika
     const logs = JSON.parse(localStorage.getItem(STORAGE_KEYS.LOGS + activeUser)) || [];
-    // 
+
+    // Dodanie wpisu ręcznego
     logs.unshift({
         exercise: `[MANUAL] ${name}`,
         weight: details,
         reps: "---",
         rpe: "---",
-        date: new Date().toLocaleDateString()
+        date: new Date().toLocaleDateString(),
+        set: 1
     });
 
-    localStorage.setItem(STORAGE_KEYS.LOGS + activeUser,
-        JSON.stringify(logs));
-        // reresh list
+    // Zapis i odświeżenie
+    localStorage.setItem(STORAGE_KEYS.LOGS + activeUser, JSON.stringify(logs));
+    
     renderLog(logs);
-        // clearing fields for inputs
-    $("inj-name").value = '';
-    $("inj-details").value = '';
+
+    // Czyszczenie pól
+    nameInput.value = '';
+    detailsInput.value = '';
+    
+    console.log("System // Manual entry added.");
 }
 
-const entry = {
-    id: Date.now(),
-    time: new Date().toLocaleTimeString(),
-    exercise: `[MANUAL] ${name}`,
-    details: details
-};
+window.onload = initializeArvGym;
 
-// Próbujemy znaleźć Twoją tablicę danych (szukamy pod różnymi nazwami)
-let targetLog = null;
-if (typeof workoutLogs !== 'undefined') targetLog = workoutLogs;
-else if (typeof workoutData !== 'undefined') targetLog = workoutData;
-else if (typeof logs !== 'undefined') targetLog = logs;
-
-if (targetLog) {
-    targetLog.push(entry);
-    // Próbujemy odświeżyć widok - szukamy Twojej funkcji renderującej
-    if (typeof renderLogs === 'function') renderLogs();
-    else if (typeof updateUI === 'function') updateUI();
-    else if (typeof displayWorkout === 'function') displayWorkout();
-
-    // Zapisujemy w pamięci
-    localStorage.setItem('arvGymData', JSON.stringify(targetLog));
-
-    $('inj-name').value = '';
-    $('inj-details').value = '';
-} else {
-    alert("System nie widzi bazy danych. Sprawdź konsolę (F12).");
-}
-}
