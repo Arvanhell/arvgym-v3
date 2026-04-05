@@ -106,29 +106,49 @@ input, select {
 /* 6. STOPKA - EKSPORT / LOAD / PURGE (FIX ROZMIARU) */
 .settings-actions {
     display: flex;
-    justify-content: flex-end;
+    justify-content: center;
     align-items: center;
-    gap: 10px;
-    padding: 10px 0 40px 0;
+    gap: 12px;
+    padding: 20px 10px 40px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
-.small-btn, .action-btn {
-    height: 35px;
-    padding: 0 12px;
-    font-size: 0.7rem;
-    background: transparent;
+/* Action btns*/
+.action-btn {
+    flex: 1;
+    max-width: 120px;
+    height: 40px;
+    background: rgba(0, 0, 0, 0.4);
     border: 1px solid var(--primary-color);
     color: var(--primary-color);
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    text-transform: uppercase;
     cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     white-space: nowrap;
+    transition: all 0.2s ease;
 }
 
-.btn-danger, .danger {
-    border-color: var(--danger);
-    color: var(--danger);
+.action-btn:active {
+    transform: scale(0.95);
+    background: var(--neon-blue);
+    color: #000;
+}
+
+/*---Danger (purge)---*/
+.danger-btn {
+    border-color: #ff4444;
+    color: #ff4444;
+}
+
+.danger-btn:active {
+    background: #ff4444;
+    color:
 }
 
 /* 7. MANUAL INJECTION - STREFA FIOLETOWA */
@@ -255,41 +275,3 @@ input, select {
     color: yelow;
 }
 
-/* Footer */
-.settings-actions {
-    display:%20flex;
-    justify-content:flex-end;
-    align-items: center gap%3A%206px;
-    margin-top: 15px;
-    margin-left: 45px;
-}
-
-.small-btn sector-btn {
-    height:4px;
-    padding: 0 20px;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 11px;
-    cursor: pointer;
-    border: 1px solid #00f2ff;
-    margin: 0;
-    box-sizing: border-box;
-    white-space: nowrap;
-    line-height:normal; /* kasuje puchniecie */
-}
-
-#btn-user-purge {
-    height: 34px;
-    padding: 0 8px; 
-    display: inline-flex; 
-    align-items: center; 
-    gap: 4px; 
-    font-size: 11px; 
-    font-weight: bold; 
-    border-color: #ff4444; 
-    color: #ff4444; 
-    white-space: nowrap; 
-    margin: 0; 
-    box-sizing: border-box;
-}

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ARV GYM v.3.0</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=2">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#00f2ff">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
@@ -199,16 +199,16 @@
  
  
  <div class="settings-actions">
-    <button  id="btn-export" class="small-btn" style="height: 34px; padding: 0 8px; display: inline-flex; align-items: center; gap: 4px; font-size: 11px; white-space: nowrap; margin: 0; box-sizing: border-box;">
+    <button id="btn-export" class="action-btn">
         EXPORT 💾
     </button>
 
-    <label class="small-btn sector-btn">
+    <button class="action-btn" onclick="document.getElementById('import-input').click()">
         LOAD 🏗️
-        <input type="file" id="import-input" style="display: none;" onchange="importFullData(event)">
-    </label>
+    </button>    
+    <input type="file" id="import-input" style="display: none; onchange="importFullData(event)">
 
-    <button  id="btn-user-purge" class="small-btn btn-danger" >
+    <button id="btn-user-purge" class="action-btn danger-btn">
         💀 PURGE 💀
     </button>
 </div>
